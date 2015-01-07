@@ -1,0 +1,10 @@
+security:
+  user:
+    name: admin
+    password: admin
+
+spring:
+  freemarker:
+    settings:
+      number_format: 0.######
+      datetime_format: iso_s_u

@@ -70,9 +70,10 @@ public class JobKey {
 
   @Override
   public String toString() {
-    return "JobKey{" +
-      "name='" + name + '\'' +
-      ", group='" + group + '\'' +
-      '}';
+    return com.google.common.base.Objects.toStringHelper(this)
+      .add("name", name)
+      .add("group", group)
+      .toString();
   }
+
 }

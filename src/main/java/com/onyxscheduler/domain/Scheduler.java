@@ -25,6 +25,8 @@ import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerException;
 import org.quartz.impl.matchers.GroupMatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +38,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class Scheduler {
+
+  private static final Logger LOG = LoggerFactory.getLogger(Scheduler.class);
 
   private final org.quartz.Scheduler quartzScheduler;
 
@@ -49,6 +53,7 @@ public class Scheduler {
     JobDetail quartzJobDetail = job.buildQuartzJobDetail();
     try {
       quartzScheduler.scheduleJob(quartzJobDetail, quartzTriggers, false);
+      LOG.info("Scheduled: {}", job);
     } catch (ObjectAlreadyExistsException e) {
       throw new DuplicateJobKeyException(job.getGroup(), job.getName(), e);
     } catch (SchedulerException e) {

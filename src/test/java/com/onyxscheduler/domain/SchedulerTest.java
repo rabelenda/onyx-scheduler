@@ -217,12 +217,12 @@ public class SchedulerTest {
     }
 
     @Override
-    protected JobDataMap buildQuartzJobDataMap() {
-      return new JobDataMap();
+    protected Map<String, Object> buildDataMap() {
+      return Collections.emptyMap();
     }
 
     @Override
-    protected void initFromQuartzJobDataMap(JobDataMap jobDataMap) {
+    protected void initFromDataMap(Map<String, Object> dataMap) {
     }
 
     @Override

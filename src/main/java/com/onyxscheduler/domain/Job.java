@@ -47,18 +47,26 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(value = HttpJob.class, name = "http")})
 public abstract class Job extends QuartzJobBean implements Runnable {
-  protected String name;
+  private static final String ID_DATAMAP_KEY = "id";
+  /* This id is manly for tracing because a job could be created and another could use same name
+     and group afterwards, but with this id both jobs will have different ids */
+  protected UUID id;
   protected String group;
+  protected String name;
   @NotEmpty
   @Valid
   protected Set<Trigger> triggers;
 
-  public String getName() {
-    return name;
+  public Job() {
+    id = UUID.randomUUID();
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public UUID getId() {
+    return id;
+  }
+
+  public void setId(UUID id) {
+    this.id = id;
   }
 
   public String getGroup() {
@@ -67,6 +75,14 @@ public abstract class Job extends QuartzJobBean implements Runnable {
 
   public void setGroup(String group) {
     this.group = group;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 
   public Set<Trigger> getTriggers() {
@@ -84,32 +100,37 @@ public abstract class Job extends QuartzJobBean implements Runnable {
   }
 
   public JobDetail buildQuartzJobDetail() {
+    JobDataMap dataMap = new JobDataMap();
+    dataMap.put(ID_DATAMAP_KEY, id.toString());
+    dataMap.putAll(buildDataMap());
+
     return org.quartz.JobBuilder.newJob(getClass())
       .withIdentity(name, group)
-      .usingJobData(buildQuartzJobDataMap())
+      .usingJobData(dataMap)
       .build();
   }
 
-  protected abstract JobDataMap buildQuartzJobDataMap();
+  protected abstract Map<String, Object> buildDataMap();
 
   public static Job fromQuartzJobDetailAndTriggers(JobDetail jobDetail,
     Set<? extends org.quartz.Trigger> triggers) {
     try {
       Job job = (Job) jobDetail.getJobClass().newInstance();
       JobKey jobKey = jobDetail.getKey();
+      job.setId(UUID.fromString((String) jobDetail.getJobDataMap().remove(ID_DATAMAP_KEY)));
       job.setName(jobKey.getName());
       job.setGroup(jobKey.getGroup());
       job.setTriggers(triggers.stream()
         .map(Trigger::fromQuartzTrigger)
         .collect(Collectors.toSet()));
-      job.initFromQuartzJobDataMap(jobDetail.getJobDataMap());
+      job.initFromDataMap(jobDetail.getJobDataMap());
       return job;
     } catch (InstantiationException | IllegalAccessException e) {
       throw Throwables.propagate(e);
     }
   }
 
-  protected abstract void initFromQuartzJobDataMap(JobDataMap jobDataMap);
+  protected abstract void initFromDataMap(Map<String, Object> dataMap);
 
   protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
     run();

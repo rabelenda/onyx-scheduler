@@ -95,4 +95,6 @@ Please feel free to send pull requests or fork, or send questions and proposals 
 
 The main point of extension is creating new `Job` types. For this just extend the `Job` class, and add the type in `Job` class in `JsonSubTypes` annotation to let
 [jackson](https://github.com/FasterXML/jackson) know how to distinguish the 
-JSON from the new job from the others.
+JSON from the new job from the others. If you need some singletons (bean), 
+could be for performance issues or just due to the logic required, 
+then add them to `OnyxSchedulerApplication` or create a `@Configuration` class. 

@@ -23,8 +23,6 @@ import com.onyxscheduler.util.TriggerTestUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
-import org.quartz.CronTrigger;
-import org.quartz.SimpleTrigger;
 
 public class TriggerTest {
 
@@ -65,27 +63,21 @@ public class TriggerTest {
   }
 
   @Test
-  public void shouldQuartzTriggerWithGivenStartTimeWhenBuildQuartzTriggerWithFixedTime() {
-    SimpleTrigger actual = (SimpleTrigger) TriggerTestUtils.buildTriggerWithFixedTime().buildQuartzTrigger();
-    assertThat(actual.getStartTime(), Matchers.is(TriggerTestUtils.FIXED_TIME));
+  public void shouldGetSameCronTriggerWhenBuildingTriggerBackFromGeneratedQuartzTrigger() {
+    Trigger originalTrigger = TriggerTestUtils.buildTriggerWithCron();
+
+    Trigger restoredTrigger = Trigger.fromQuartzTrigger(originalTrigger.buildQuartzTrigger());
+
+    assertThat(restoredTrigger, is(originalTrigger));
   }
 
   @Test
-  public void shouldGetProperQuartzTriggerWhenBuildQuartzTriggerWithCron() {
-    CronTrigger actual = (CronTrigger) TriggerTestUtils.buildTriggerWithCron().buildQuartzTrigger();
-    assertThat(actual.getCronExpression(), Matchers.is(TriggerTestUtils.CRON));
-  }
+  public void shouldGetSameFixedTimeTriggerWhenBuildingTriggerBackFromGeneratedQuartzTrigger() {
+    Trigger originalTrigger = TriggerTestUtils.buildTriggerWithFixedTime();
 
-  @Test
-  public void shouldGetProperTriggerWhenFromQuartzCronTrigger() {
-    assertThat(Trigger.fromQuartzTrigger(TriggerTestUtils.buildCronQuartzTrigger()), Matchers.is(
-      TriggerTestUtils.buildTriggerWithCron()));
-  }
+    Trigger restoredTrigger = Trigger.fromQuartzTrigger(originalTrigger.buildQuartzTrigger());
 
-  @Test
-  public void shouldGetProperTriggerWhenFromQuartzNonCronTrigger() {
-    assertThat(Trigger.fromQuartzTrigger(TriggerTestUtils.buildFixedTimeQuartzTrigger()),
-      Matchers.is(TriggerTestUtils.buildTriggerWithFixedTime()));
+    assertThat(restoredTrigger, is(originalTrigger));
   }
 
 }

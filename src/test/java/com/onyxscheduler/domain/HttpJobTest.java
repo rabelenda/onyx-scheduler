@@ -16,13 +16,9 @@
 
 package com.onyxscheduler.domain;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-
 import com.google.common.base.Throwables;
 import java.net.*;
 import org.junit.Test;
-import org.quartz.JobDataMap;
 import org.springframework.http.HttpMethod;
 
 public class HttpJobTest extends JobTest {
@@ -39,7 +35,7 @@ public class HttpJobTest extends JobTest {
   }
 
   @Override
-  protected Job buildJob() {
+  protected Job buildRepresentativeJob() {
     HttpJob job = new HttpJob();
     job.setUrl(URL);
     job.setMethod(METHOD);
@@ -47,25 +43,12 @@ public class HttpJobTest extends JobTest {
     return job;
   }
 
-  @Override
-  protected JobDataMap buildJobDataMap() {
-    JobDataMap data = new JobDataMap();
-    data.put(HttpJob.URL_DATAMAP_KEY, URL.toString());
-    data.put(HttpJob.METHOD_DATAMAP_KEY, METHOD.toString());
-    data.put(HttpJob.BODY_DATAMAP_KEY, BODY);
-    return data;
-  }
-
-  @Override
-  protected void assertConcreteProperties(Job job) {
-    HttpJob httpJob = (HttpJob) job;
-    assertThat(httpJob.getUrl(), is(URL));
-    assertThat(httpJob.getMethod(), is(METHOD));
-    assertThat(httpJob.getBody(), is(BODY));
-  }
-
   @Test
-  public void shouldUsePostMethodByDefault() {
-    assertThat(new HttpJob().getMethod(), is(HttpMethod.POST));
+  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetailWithNoBody() {
+    HttpJob job = new HttpJob();
+    job.setUrl(URL);
+    job.setMethod(METHOD);
+    verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(job);
   }
+
 }

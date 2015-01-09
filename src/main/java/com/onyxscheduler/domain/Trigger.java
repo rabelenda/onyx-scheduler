@@ -106,9 +106,10 @@ public class Trigger {
 
   @Override
   public String toString() {
-    return "Trigger{" +
-      "when=" + when +
-      ", cron='" + cron + '\'' +
-      '}';
+    return com.google.common.base.Objects.toStringHelper(this)
+      .add("when", when)
+      .add("cron", cron)
+      .toString();
   }
+
 }

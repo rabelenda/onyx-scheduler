@@ -16,88 +16,35 @@
 
 package com.onyxscheduler.domain;
 
+import static com.onyxscheduler.util.TriggerTestUtils.buildTriggers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableSet;
-import com.onyxscheduler.util.TriggerTestUtils;
-import org.hamcrest.Matchers;
-import org.junit.Before;
+import java.util.*;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
 
 public abstract class JobTest {
 
   private static final String JOB_NAME = "name";
   private static final String JOB_GROUP = "group";
 
-  private Job job;
-
-  @Before
-  public void setup() {
-    job = buildJob();
-    job.setName(JOB_NAME);
-    job.setGroup(JOB_GROUP);
-  }
-
-  protected abstract Job buildJob();
-
   @Test
-  public void shouldGetQuartzTriggersFromJobTriggersWhenBuildQuartzTriggers() {
-    Trigger trigger1 = Mockito.mock(Trigger.class);
-    Trigger trigger2 = Mockito.mock(Trigger.class);
-    org.quartz.Trigger quartzTrigger1 = Mockito.mock(org.quartz.Trigger.class);
-    org.quartz.Trigger quartzTrigger2 = Mockito.mock(org.quartz.Trigger.class);
-
-    when(trigger1.buildQuartzTrigger()).thenReturn(quartzTrigger1);
-    when(trigger2.buildQuartzTrigger()).thenReturn(quartzTrigger2);
-    job.setTriggers(ImmutableSet.of(trigger1, trigger2));
-
-    assertThat(job.buildQuartzTriggers(), is(ImmutableSet.of(quartzTrigger1, quartzTrigger2)));
+  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetail() {
+    verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(buildRepresentativeJob());
   }
 
-  @Test
-  public void shouldGetQuartzJobDetailWithProperKeyWhenBuildQuartzJobDetail() {
-    assertThat(job.buildQuartzJobDetail().getKey(), is(new org.quartz.JobKey(JOB_NAME, JOB_GROUP)));
+  protected void verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(Job originalJob) {
+    originalJob.setName(JOB_NAME);
+    originalJob.setGroup(JOB_GROUP);
+    Set<Trigger> triggers = buildTriggers();
+    originalJob.setTriggers(triggers);
+
+    Job restoredJob =
+      Job.fromQuartzJobDetailAndTriggers(originalJob.buildQuartzJobDetail(), originalJob.buildQuartzTriggers());
+
+    assertThat(restoredJob, is(originalJob));
   }
 
-  @Test
-  public void shouldGetQuartzJobDetailWithConcreteJobDataWhenBuildQuartzJobDetail() {
-    assertThat(job.buildQuartzJobDetail().getJobDataMap(), is(buildJobDataMap()));
-  }
-
-  protected abstract JobDataMap buildJobDataMap();
-
-  @Test
-  public void shouldGetJobWithProperGroupAndNameWhenBuildQuartzJobDetail() {
-    Job job = Job.fromQuartzJobDetailAndTriggers(buildJobDetail(), TriggerTestUtils.buildQuartzTriggers());
-    assertThat(job.getName(), is(JOB_NAME));
-    assertThat(job.getGroup(), is(JOB_GROUP));
-  }
-
-  private JobDetail buildJobDetail() {
-    return JobBuilder.newJob(job.getClass())
-      .withIdentity(JOB_NAME, JOB_GROUP)
-      .setJobData(buildJobDataMap())
-      .build();
-  }
-
-  @Test
-  public void shouldGetJobWithProperTriggersWhenBuildQuartzJobDetail() {
-    Job job = Job.fromQuartzJobDetailAndTriggers(buildJobDetail(), TriggerTestUtils.buildQuartzTriggers());
-    assertThat(job.getTriggers(), Matchers.is(TriggerTestUtils.buildTriggers()));
-  }
-
-  @Test
-  public void shouldGetJobWithInitializedConcretePropertiesWhenBuildQuartzJobDetail() {
-    Job job = Job.fromQuartzJobDetailAndTriggers(buildJobDetail(), TriggerTestUtils.buildQuartzTriggers());
-    assertConcreteProperties(job);
-  }
-
-  protected abstract void assertConcreteProperties(Job job);
+  protected abstract Job buildRepresentativeJob();
 
 }

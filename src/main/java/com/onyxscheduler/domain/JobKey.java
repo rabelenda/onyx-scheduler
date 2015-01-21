@@ -39,6 +39,7 @@ public class JobKey {
     return name;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public String getGroup() {
     return group;
   }

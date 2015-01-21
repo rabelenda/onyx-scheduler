@@ -48,9 +48,11 @@ public class HttpJob extends Job {
   private HttpMethod method = HttpMethod.POST;
   private String body;
 
+  @SuppressWarnings("SpringJavaAutowiredMembersInspection")
   @Autowired
   private RestTemplate restTemplate;
 
+  @SuppressWarnings("UnusedDeclaration")
   public URL getUrl() {
     return url;
   }
@@ -59,6 +61,7 @@ public class HttpJob extends Job {
     this.url = url;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public HttpMethod getMethod() {
     return method;
   }
@@ -67,6 +70,7 @@ public class HttpJob extends Job {
     this.method = method;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public String getBody() {
     return body;
   }
@@ -157,18 +161,6 @@ public class HttpJob extends Job {
       this.request = request;
       this.responseCode = responseCode;
       this.responseBody = responseBody;
-    }
-
-    public HttpJob getRequest() {
-      return request;
-    }
-
-    public int getResponseCode() {
-      return responseCode;
-    }
-
-    public String getResponseBody() {
-      return responseBody;
     }
 
     @Override

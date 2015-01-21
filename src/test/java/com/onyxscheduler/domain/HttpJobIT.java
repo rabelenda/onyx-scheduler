@@ -18,26 +18,32 @@ package com.onyxscheduler.domain;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import java.net.*;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.web.client.RestTemplate;
 
 public class HttpJobIT {
 
   private static final String BODY = "Testing body";
   public static final String TEST_PATH = "/test";
 
+  @ClassRule
+  public static WireMockClassRule wireMockClassRule = new WireMockClassRule(0);
+
   @Rule
-  public WireMockRule wireMockRule = new WireMockRule(0);
+  public WireMockClassRule wireMockRule = wireMockClassRule;
 
   private HttpJob job;
 
   @Before
   public void setup() throws MalformedURLException {
     job = new HttpJob();
+    job.setRestTemplate(new RestTemplate());
     job.setUrl(new URL("http://localhost:" + wireMockRule.port() + TEST_PATH));
     job.setBody(BODY);
 

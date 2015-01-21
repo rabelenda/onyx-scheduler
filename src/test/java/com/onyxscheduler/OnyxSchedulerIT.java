@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import com.github.tomakehurst.wiremock.client.VerificationException;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -36,6 +36,7 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,13 +77,17 @@ public class OnyxSchedulerIT {
   @Value("${security.user.password}")
   String password;
 
+  @ClassRule
+  public static WireMockClassRule wireMockClassRule = new WireMockClassRule(0);
+
   @Rule
-  public WireMockRule wireMockRule = new WireMockRule(0);
+  public WireMockClassRule wireMockRule = wireMockClassRule;
 
   private RestTemplate restTemplate;
 
   private String appUrl;
 
+  @SuppressWarnings("SpringJavaAutowiredMembersInspection")
   @Autowired
   private Configuration freemarkerConfig;
 

@@ -61,6 +61,7 @@ public abstract class Job extends QuartzJobBean implements Runnable {
     id = UUID.randomUUID();
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public UUID getId() {
     return id;
   }
@@ -85,6 +86,7 @@ public abstract class Job extends QuartzJobBean implements Runnable {
     this.name = name;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public Set<Trigger> getTriggers() {
     return triggers;
   }

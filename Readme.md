@@ -58,7 +58,7 @@ Authorization: Basic YWRtaW46YWRtaW4=
   "type": "http",
   "name": "fixedTime",
   "method": "GET",
-  "url": "http://www.google.com/humans.txt",
+  "url": "http://httpbin.org/get",
   "triggers": [
     {"when": "2014-11-05T13:15:30Z"}
   ]
@@ -75,8 +75,9 @@ Authorization: Basic YWRtaW46YWRtaW4=
   "type": "http",
   "name": "cronExpression",
   "method": "POST",
-  "body": "test"
-  "url": "http://www.google.com/humans.txt",
+  "headers": {"Content-Type": "application/json"},
+  "body": "{\"field\":\"value\"}",
+  "url": "http://httpbin.org/post",
   "triggers": [
     {"cron": "0/2 * * * * ?"}
   ]

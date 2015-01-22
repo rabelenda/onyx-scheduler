@@ -21,18 +21,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import java.util.*;
-import org.junit.Test;
 
 public abstract class JobTest {
 
   private static final String JOB_NAME = "name";
   private static final String JOB_GROUP = "group";
 
-  @Test
-  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetail() {
-    verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(buildRepresentativeJob());
-  }
 
+  //this test is relying on proper equals implementation in job subclasses which should be
+  // auto-generated and updated with IDE to avoid bugs and have to create test for each potential
+  // case of the equals method
   protected void verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(Job originalJob) {
     originalJob.setName(JOB_NAME);
     originalJob.setGroup(JOB_GROUP);
@@ -44,7 +42,5 @@ public abstract class JobTest {
 
     assertThat(restoredJob, is(originalJob));
   }
-
-  protected abstract Job buildRepresentativeJob();
 
 }

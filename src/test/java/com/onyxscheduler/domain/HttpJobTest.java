@@ -17,14 +17,13 @@
 package com.onyxscheduler.domain;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
 import java.net.*;
 import org.junit.Test;
 import org.springframework.http.HttpMethod;
 
 public class HttpJobTest extends JobTest {
   private static final URL URL = buildUrl();
-  private static final HttpMethod METHOD = HttpMethod.PUT;
-  private static final String BODY = "Testing body";
 
   private static URL buildUrl() {
     try {
@@ -34,20 +33,34 @@ public class HttpJobTest extends JobTest {
     }
   }
 
-  @Override
-  protected Job buildRepresentativeJob() {
+  @Test
+  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetailWithOnlyUrl() {
     HttpJob job = new HttpJob();
     job.setUrl(URL);
-    job.setMethod(METHOD);
-    job.setBody(BODY);
-    return job;
+    verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(job);
   }
 
   @Test
-  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetailWithNoBody() {
+  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetailWithNoDefaultMethod() {
     HttpJob job = new HttpJob();
     job.setUrl(URL);
-    job.setMethod(METHOD);
+    job.setMethod(HttpMethod.GET);
+    verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(job);
+  }
+
+  @Test
+  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetailWithBody() {
+    HttpJob job = new HttpJob();
+    job.setUrl(URL);
+    job.setBody("test");
+    verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(job);
+  }
+
+  @Test
+  public void shouldGetSameJobWhenBuildingJobBackFromGeneratedJobDetailWithHeaders() {
+    HttpJob job = new HttpJob();
+    job.setUrl(URL);
+    job.setHeaders(ImmutableMap.of("h1", "v1", "h2", "v2"));
     verifyGettingSameJobWhenBuildingJobBackFromGeneratedJobDetail(job);
   }
 

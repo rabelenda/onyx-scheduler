@@ -16,16 +16,20 @@
 
 package com.onyxscheduler.domain;
 
-import com.google.common.base.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
+import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.Objects;
 import javax.validation.constraints.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -42,15 +46,19 @@ public class HttpJob extends Job {
   public static final String URL_DATAMAP_KEY = "url";
   public static final String METHOD_DATAMAP_KEY = "method";
   public static final String BODY_DATAMAP_KEY = "body";
+  public static final String HEADERS_JSON_DATAMAP_KEY = "headersJson";
 
   @NotNull
   private URL url;
   private HttpMethod method = HttpMethod.POST;
   private String body;
+  private Map<String,String> headers = Collections.emptyMap();
 
   @SuppressWarnings("SpringJavaAutowiredMembersInspection")
   @Autowired
   private RestTemplate restTemplate;
+
+  private ObjectMapper jsonMapper = new ObjectMapper();
 
   @SuppressWarnings("UnusedDeclaration")
   public URL getUrl() {
@@ -79,6 +87,27 @@ public class HttpJob extends Job {
     this.body = body;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
+  public Map<String, String> getHeaders() {
+    return headers;
+  }
+
+  public void setHeaders(Map<String, String> headers) {
+    this.headers = headers;
+  }
+
+  //this method is used by spring to automatically populate it when building the job from jobDetail
+  @SuppressWarnings("unchecked")
+  @JsonIgnore
+  public void setHeadersJson(String json) {
+    try {
+      headers = jsonMapper.readValue(json, Map.class);
+    } catch (IOException e) {
+      //This exception should never happen so just propagating it for the unexpected problem
+      throw Throwables.propagate(e);
+    }
+  }
+
   public void setRestTemplate(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
   }
@@ -90,6 +119,12 @@ public class HttpJob extends Job {
       .put(METHOD_DATAMAP_KEY, method.toString());
     if (body != null) {
       builder.put(BODY_DATAMAP_KEY, body);
+    }
+    try {
+      builder.put(HEADERS_JSON_DATAMAP_KEY, jsonMapper.writeValueAsString(headers));
+    } catch (JsonProcessingException e) {
+      //This exception should never happen so just propagating it for the unexpected problem
+      throw Throwables.propagate(e);
     }
     return builder.build();
   }
@@ -103,11 +138,14 @@ public class HttpJob extends Job {
     }
     method = HttpMethod.valueOf((String) dataMap.get(METHOD_DATAMAP_KEY));
     body = (String) dataMap.get(BODY_DATAMAP_KEY);
+    setHeadersJson((String) dataMap.get(HEADERS_JSON_DATAMAP_KEY));
   }
 
   @Override
   public void run() {
-    HttpEntity<String> request = new HttpEntity<>(body);
+    HttpHeaders httpHeaders = new HttpHeaders();
+    headers.forEach(httpHeaders::add);
+    HttpEntity<String> request = new HttpEntity<>(body, httpHeaders);
     ResponseEntity<String> response =
       restTemplate.exchange(url.toString(), method, request, String.class);
     int code = response.getStatusCode().value();
@@ -117,7 +155,7 @@ public class HttpJob extends Job {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, group, name, triggers, url, method, body);
+    return Objects.hash(id, group, name, triggers, url, method, body, headers);
   }
 
   @Override
@@ -132,7 +170,7 @@ public class HttpJob extends Job {
     return Objects.equals(this.id, other.id) && Objects.equals(this.group, other.group)
       && Objects.equals(this.name, other.name) && Objects.equals(this.triggers, other.triggers)
       && Objects.equals(this.url, other.url) && Objects.equals(this.method, other.method) && Objects
-      .equals(this.body, other.body);
+      .equals(this.body, other.body) && Objects.equals(this.headers, other.headers);
   }
 
   @Override
@@ -145,6 +183,7 @@ public class HttpJob extends Job {
       .add("url", url)
       .add("method", method)
       .add("body", body)
+      .add("headers", headers)
       .toString();
   }
 

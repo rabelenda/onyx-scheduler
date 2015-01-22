@@ -97,8 +97,12 @@ public class JobController {
   }
 
   @RequestMapping(value = "/groups/{group}/jobs/{name}", method = RequestMethod.DELETE)
-  public void deleteJob(@PathVariable String group, @PathVariable String name) {
-    scheduler.deleteJob(new JobKey(group, name));
+  public ResponseEntity deleteJob(@PathVariable String group, @PathVariable String name) {
+    if (scheduler.deleteJob(new JobKey(group, name))) {
+      return new ResponseEntity(HttpStatus.NO_CONTENT);
+    } else {
+      return ResponseEntity.notFound().build();
+    }
   }
 
 }

@@ -18,6 +18,7 @@ package com.onyxscheduler;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.any;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.onyxscheduler.util.TriggerTestUtils.CRON;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
@@ -213,7 +214,7 @@ public class OnyxSchedulerIT {
   }
 
   @Test
-  public void shouldFireMultipleHttpRequestsWithCron() {
+  public void shouldFireMultipleHttpPostsWithCron() {
     String jobName = "cron";
     String requestBody = buildCronJobRequestBodyFromNameAndCronExpression(jobName, CRON);
     ResponseEntity<String> response = scheduleJob(requestBody);
@@ -223,7 +224,9 @@ public class OnyxSchedulerIT {
   }
 
   private void pollingVerifyJobRequestWithAtLeastCount(int count, String jobName) {
-    pollingVerify(() -> assertThat(findAll(getRequestedFor(urlEqualTo(getUrlFromJobName(jobName)))),
+    pollingVerify(() -> assertThat(findAll(postRequestedFor(urlEqualTo(getUrlFromJobName(jobName)
+      )).withRequestBody(equalTo("{\"field\":\"value\"}")).withHeader(HttpHeaders.CONTENT_TYPE,
+        equalTo(MediaType.APPLICATION_JSON_VALUE))),
       hasSize(greaterThanOrEqualTo(count))));
   }
 
@@ -234,7 +237,7 @@ public class OnyxSchedulerIT {
       jobName,
       CRON_TEMPLATE_PROPERTY_KEY,
       cron);
-    return solveTemplate("jobWithCron.json.ftl", model);
+    return solveTemplate("jobWithCronAndHttpPost.json.ftl", model);
   }
 
 }

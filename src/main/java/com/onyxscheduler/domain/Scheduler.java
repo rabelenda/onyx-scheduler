@@ -105,9 +105,9 @@ public class Scheduler {
     }
   }
 
-  public void deleteJob(JobKey jobKey) {
+  public boolean deleteJob(JobKey jobKey) {
     try {
-      quartzScheduler.deleteJob(jobKey.buildQuartzJobKey());
+      return quartzScheduler.deleteJob(jobKey.buildQuartzJobKey());
     } catch (SchedulerException e) {
       throw Throwables.propagate(e);
     }

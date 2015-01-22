@@ -65,6 +65,69 @@ public class SchedulerTest {
     verify(quartzScheduler).scheduleJob(job.buildQuartzJobDetail(), job.buildQuartzTriggers(), false);
   }
 
+  static class FakeJob extends com.onyxscheduler.domain.Job {
+
+    private Set<Trigger> quartzTriggers;
+
+    static FakeJob build() {
+      FakeJob job = new FakeJob();
+      job.setGroup(SchedulerTest.JOB_GROUP);
+      job.setName(SchedulerTest.JOB_NAME);
+      job.setTriggers(TriggerTestUtils.buildTriggers());
+      return job;
+    }
+
+    @Override
+    public Set<Trigger> buildQuartzTriggers() {
+      //changed this method to always return the same triggers and allow easier verification of
+      // expected triggers (otherwise new triggers are created that have different id)
+      if (quartzTriggers == null) {
+        quartzTriggers = super.buildQuartzTriggers();
+      }
+      return quartzTriggers;
+    }
+
+    @Override
+    protected Map<String, Object> buildDataMap() {
+      return Collections.emptyMap();
+    }
+
+    @Override
+    protected void initFromDataMap(Map<String, Object> dataMap) {
+    }
+
+    @Override
+    public void run() {
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(group, name, triggers);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null || getClass() != obj.getClass()) {
+        return false;
+      }
+      final FakeJob other = (FakeJob) obj;
+      return Objects.equals(this.group, other.group) && Objects.equals(this.name, other.name)
+        && Objects.equals(this.triggers, other.triggers);
+    }
+
+    @Override
+    public String toString() {
+      return "FakeJob{" +
+        "group='" + group + '\'' +
+        ", name='" + name + '\'' +
+        ", triggers=" + triggers +
+        '}';
+    }
+  }
+
   @Test
   public void shouldThrowDuplicateJobKeyWhenScheduleJobWithObjectAlreadyExistsQuartzScheduler()
     throws com.onyxscheduler.domain.Scheduler.DuplicateJobKeyException, SchedulerException {
@@ -151,13 +214,17 @@ public class SchedulerTest {
   @SuppressWarnings("unchecked")
   @Test
   public void shouldGetJobFromQuartzSchedulerWhenGetJob() throws SchedulerException {
-    org.quartz.JobKey quartzJobKey = new org.quartz.JobKey(JOB_NAME, JOB_GROUP);
+    org.quartz.JobKey quartzJobKey = getQuartzJobKey();
     FakeJob job = FakeJob.build();
     setupQuartzSchedulerJobDetail(quartzJobKey, job);
     ImmutableList quartzTriggers = ImmutableList.copyOf(job.buildQuartzTriggers());
     when(quartzScheduler.getTriggersOfJob(quartzJobKey)).thenReturn(quartzTriggers);
 
-    assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.of(job)));
+    assertThat(scheduler.getJob(getJobKey()), is(Optional.of(job)));
+  }
+
+  private org.quartz.JobKey getQuartzJobKey() {
+    return new org.quartz.JobKey(JOB_NAME, JOB_GROUP);
   }
 
   private void setupQuartzSchedulerJobDetail(org.quartz.JobKey quartzJobKey, FakeJob job)
@@ -167,8 +234,12 @@ public class SchedulerTest {
 
   @Test
   public void shouldGetEmptyOptionalWhenGetJobWithUnknownJobKey() {
-    assertThat(scheduler.getJob(new com.onyxscheduler.domain.JobKey(JOB_GROUP, JOB_NAME)),
+    assertThat(scheduler.getJob(getJobKey()),
       is(Optional.empty()));
+  }
+
+  private JobKey getJobKey() {
+    return new JobKey(JOB_GROUP, JOB_NAME);
   }
 
   @Test
@@ -176,19 +247,19 @@ public class SchedulerTest {
     throws SchedulerException {
 
     SchedulerException cause = new SchedulerException();
-    doThrow(cause).when(quartzScheduler).getJobDetail(new org.quartz.JobKey(JOB_NAME, JOB_GROUP));
+    doThrow(cause).when(quartzScheduler).getJobDetail(getQuartzJobKey());
 
     expectedException.expect(RuntimeException.class);
     expectedException.expectCause(is(cause));
 
-    scheduler.getJob(new com.onyxscheduler.domain.JobKey(JOB_GROUP, JOB_NAME));
+    scheduler.getJob(getJobKey());
   }
 
   @Test
   public void shouldPropagateExceptionWhenGetJobWithFailingQuartzSchedulerGetTriggersOfJob()
     throws SchedulerException {
 
-    org.quartz.JobKey quartzJobKey = new org.quartz.JobKey(JOB_NAME, JOB_GROUP);
+    org.quartz.JobKey quartzJobKey = getQuartzJobKey();
     FakeJob job = FakeJob.build();
     setupQuartzSchedulerJobDetail(quartzJobKey, job);
     SchedulerException cause = new SchedulerException();
@@ -197,70 +268,38 @@ public class SchedulerTest {
     expectedException.expect(RuntimeException.class);
     expectedException.expectCause(is(cause));
 
-    scheduler.getJob(new com.onyxscheduler.domain.JobKey(JOB_GROUP, JOB_NAME));
+    scheduler.getJob(getJobKey());
   }
 
-  static class FakeJob extends com.onyxscheduler.domain.Job {
+  @Test
+  public void shouldReturnTrueWhenDeleteJobWithQuartzSchedulerDeleteReturningTrue()
+    throws SchedulerException {
 
-    private Set<Trigger> quartzTriggers;
+    when(quartzScheduler.deleteJob(getQuartzJobKey())).thenReturn(true);
 
-    static FakeJob build() {
-      FakeJob job = new FakeJob();
-      job.setGroup(SchedulerTest.JOB_GROUP);
-      job.setName(SchedulerTest.JOB_NAME);
-      job.setTriggers(TriggerTestUtils.buildTriggers());
-      return job;
-    }
+    assertThat(scheduler.deleteJob(getJobKey()), is(true));
+  }
 
-    @Override
-    public Set<Trigger> buildQuartzTriggers() {
-      //changed this method to always return the same triggers and allow easier verification of
-      // expected triggers (otherwise new triggers are created that have different id)
-      if (quartzTriggers == null) {
-        quartzTriggers = super.buildQuartzTriggers();
-      }
-      return quartzTriggers;
-    }
+  @Test
+  public void shouldReturnFalseWhenDeleteJobWithQuartzSchedulerDeleteReturningFalse()
+    throws SchedulerException {
 
-    @Override
-    protected Map<String, Object> buildDataMap() {
-      return Collections.emptyMap();
-    }
+    when(quartzScheduler.deleteJob(getQuartzJobKey())).thenReturn(false);
 
-    @Override
-    protected void initFromDataMap(Map<String, Object> dataMap) {
-    }
+    assertThat(scheduler.deleteJob(getJobKey()), is(false));
+  }
 
-    @Override
-    public void run() {
-    }
+  @Test
+  public void shouldPropagateExceptionWhenDeleteJobWithFailingQuartzSchedulerDelete()
+    throws SchedulerException {
 
-    @Override
-    public int hashCode() {
-      return Objects.hash(group, name, triggers);
-    }
+    SchedulerException cause = new SchedulerException();
+    when(quartzScheduler.deleteJob(getQuartzJobKey())).thenThrow(cause);
 
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null || getClass() != obj.getClass()) {
-        return false;
-      }
-      final FakeJob other = (FakeJob) obj;
-      return Objects.equals(this.group, other.group) && Objects.equals(this.name, other.name)
-        && Objects.equals(this.triggers, other.triggers);
-    }
+    expectedException.expect(RuntimeException.class);
+    expectedException.expectCause(is(cause));
 
-    @Override
-    public String toString() {
-      return "FakeJob{" +
-        "group='" + group + '\'' +
-        ", name='" + name + '\'' +
-        ", triggers=" + triggers +
-        '}';
-    }
+    scheduler.deleteJob(getJobKey());
   }
 
 }

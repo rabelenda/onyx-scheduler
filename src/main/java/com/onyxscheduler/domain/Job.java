@@ -19,13 +19,14 @@ package com.onyxscheduler.domain;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Throwables;
-import java.util.*;
-import java.util.stream.*;
-import javax.validation.*;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.quartz.*;
-import org.quartz.JobKey;
-import org.springframework.scheduling.quartz.QuartzJobBean;
+
+import javax.validation.Valid;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Jobs are the basic unit of work of onyx scheduler. They host the logic to be executed once the
@@ -46,7 +47,7 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(value = HttpJob.class, name = "http")})
-public abstract class Job extends QuartzJobBean implements Runnable {
+public abstract class Job implements org.quartz.Job, Runnable {
   private static final String ID_DATAMAP_KEY = "id";
   /* This id is manly for tracing because a job could be created and another could use same name
      and group afterwards, but with this id both jobs will have different ids */
@@ -118,7 +119,7 @@ public abstract class Job extends QuartzJobBean implements Runnable {
     Set<? extends org.quartz.Trigger> triggers) {
     try {
       Job job = (Job) jobDetail.getJobClass().newInstance();
-      JobKey jobKey = jobDetail.getKey();
+      org.quartz.JobKey jobKey = jobDetail.getKey();
       job.setId(UUID.fromString((String) jobDetail.getJobDataMap().remove(ID_DATAMAP_KEY)));
       job.setName(jobKey.getName());
       job.setGroup(jobKey.getGroup());
@@ -134,7 +135,8 @@ public abstract class Job extends QuartzJobBean implements Runnable {
 
   protected abstract void initFromDataMap(Map<String, Object> dataMap);
 
-  protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
+  @Override
+  public void execute(JobExecutionContext context) throws JobExecutionException {
     run();
   }
 

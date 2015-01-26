@@ -25,7 +25,7 @@
     <logger name="com.github.tomakehurst.wiremock.common.Log4jNotifier" level="WARN"/>
     <logger name="org.mortbay.log" level="WARN"/>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

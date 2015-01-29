@@ -24,7 +24,8 @@ If you want to run integration tests run `mvn verify`.
 
 ##Running
 
-You can just run the application with `java -jar target/onyx-scheduler.jar`.
+You can just run the application with `java -jar target/onyx-scheduler.jar` which will run onyx with no persistent job store.
+If you want to run it with a provided mysql database which already contains quartz tables for persistent job store, then you can fire it with something like `java -jar target/onyx-scheduler.jar --spring.profiles.active=mysql-jobstore --spring.datasource.url=jdbc:mysql://localhost/onyxdb --spring.datasource.user=onyxuser --spring.datasource.password=onyxpass` (in this example the quartz database is `onyxdb` and user is `onyxuser` and password `onyxpass`
 
 ###Docker
 
@@ -42,7 +43,8 @@ A `Dockerfile` is provided so if you want to build it (after running `mvn packag
 ####Fig preconditions
 - [Fig installed](http://www.fig.sh/install.html)
 
-A `fig.yml` file is provided which allows to run `fig up` and have all the containers built and running (currently in most of the cases just one container, but I'm planning to add more).
+A `fig.yml` file is provided which allows to run `fig up` and have scheduler running with no persistent job storage.
+Additionally a `fig-mysql.yml` file is provided which allows through running `fig -f fig-mysql.yml up` to start the scheduler container and a mysql container liking them and using the mysql container for persistent job storage.
 
 ##API
 The api is almost the same as qzui. Some examples for scheduling jobs:

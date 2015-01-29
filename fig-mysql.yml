@@ -1,0 +1,24 @@
+scheduler:
+  build: .
+  ports:
+   - 8080:8080
+  links:
+   - mysql
+  environment:
+   - SPRING_PROFILES_ACTIVE=mysql-jobstore
+mysql:
+  image: mysql:5.7
+  volumes:
+   - /usr/local/etc/onyx-db:/var/lib/mysql
+   - fig/mysql/schema.sql:/tmp/schema.sql
+   - fig/mysql/entry.sh:/tmp/entry.sh
+  environment:
+   - MYSQL_ROOT_PASSWORD=admin
+   - MYSQL_USER=onyx
+   - MYSQL_PASSWORD=onyx
+   - MYSQL_DATABASE=onyx
+   - MYSQL_SCRIPT=/tmp/schema.sql
+  ports:
+   - 3306:3306
+  entrypoint: /tmp/entry.sh
+  command: mysqld

@@ -9,3 +9,18 @@ security:
   user:
     name: admin
     password: admin
+
+---
+
+quartz:
+  jobstore:
+    clazz: org.quartz.impl.jdbcjobstore.JobStoreTX
+    driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+    clustered: true
+
+spring:
+  profiles: mysql-jobstore
+  datasource:
+    url: "jdbc:mysql://mysql/onyx"
+    username: onyx
+    password: onyx

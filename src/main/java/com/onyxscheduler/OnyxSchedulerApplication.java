@@ -21,32 +21,22 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
-import com.onyxscheduler.quartz.AutowiringSpringBeanJobFactory;
-import org.quartz.spi.JobFactory;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.web.client.RestTemplate;
 
-@SpringBootApplication
+@Configuration
+@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
+@ComponentScan
 public class OnyxSchedulerApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(OnyxSchedulerApplication.class, args);
-  }
-
-  @Bean
-  public JobFactory jobFactory() {
-    return new AutowiringSpringBeanJobFactory();
-  }
-
-  @Bean
-  public SchedulerFactoryBean quartzSchedulerFactory(JobFactory jobFactory) {
-    SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
-    schedulerFactoryBean.setJobFactory(jobFactory);
-    return schedulerFactoryBean;
   }
 
   /* since there is no way to set serializationInclusion through spring boot application.yml we

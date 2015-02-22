@@ -16,11 +16,8 @@
 
 package com.onyxscheduler.domain;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.google.common.collect.ImmutableMap;
-import java.net.*;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -29,6 +26,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 public class HttpJobIT {
 
@@ -104,5 +106,8 @@ public class HttpJobIT {
     verify(postRequestedFor(urlEqualTo(TEST_PATH))
       .withHeader(key, equalTo(value)));
   }
+
+  //TODO test json serialization
+  //TODO test quartz job creation and execution
 
 }

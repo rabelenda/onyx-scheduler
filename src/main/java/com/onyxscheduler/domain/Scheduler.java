@@ -18,9 +18,6 @@ package com.onyxscheduler.domain;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
-import java.util.*;
-import java.util.stream.*;
-import javax.validation.*;
 import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerException;
@@ -29,6 +26,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.validation.Valid;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Adapter to use quartz scheduler with onyx jobs.

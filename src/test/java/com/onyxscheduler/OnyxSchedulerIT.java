@@ -16,26 +16,12 @@
 
 package com.onyxscheduler;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.any;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.onyxscheduler.util.TriggerTestUtils.CRON;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
-import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
-import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import java.io.*;
-import java.time.*;
-import java.util.*;
-import java.util.concurrent.*;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -52,21 +38,31 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.any;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.onyxscheduler.util.PollingVerifier.pollingVerify;
+import static com.onyxscheduler.util.TriggerTestUtils.CRON;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
 @WebAppConfiguration
 @IntegrationTest({"server.port=0"})
 public class OnyxSchedulerIT {
 
-  //TODO change this into a single smoke test and move all the tests to SchedulerIT
-
   public static final String PORT_TEMPLATE_PROPERTY_KEY = "port";
   public static final String JOB_NAME_TEMPLATE_PROPERTY_KEY = "jobName";
   public static final String CRON_TEMPLATE_PROPERTY_KEY = "cron";
   public static final String FIXED_DATE_TEMPLATE_PROPERTY_KEY = "fixedDate";
 
-  private static final long VERIFYING_POLL_PERIOD_IN_MILLIS = 500;
-  private static final long VERIFYING_POLL_TIMEOUT_IN_MILLIS = 5000;
   public static final String ONYX_TEST_GROUP_JOBS_PATH = "/onyx/groups/test/jobs";
 
   @Value("${local.server.port}")
@@ -118,27 +114,6 @@ public class OnyxSchedulerIT {
     pollingVerify(() -> verify(getRequestedFor(urlEqualTo(getUrlFromJobName(jobName)))));
   }
 
-  private void pollingVerify(Runnable verify) {
-    AssertionError lastVerification;
-    Stopwatch watch = Stopwatch.createStarted();
-    do {
-      try {
-        lastVerification = null;
-        verify.run();
-      } catch (AssertionError e) {
-        lastVerification = e;
-        try {
-          Thread.sleep(VERIFYING_POLL_PERIOD_IN_MILLIS);
-        } catch (InterruptedException e1) {
-          Throwables.propagate(e1);
-        }
-      }
-    } while (watch.elapsed(TimeUnit.MILLISECONDS) < VERIFYING_POLL_TIMEOUT_IN_MILLIS);
-    if (lastVerification != null) {
-      throw lastVerification;
-    }
-  }
-
   private String getUrlFromJobName(String jobName) {
     return "/" + jobName;
   }
@@ -176,41 +151,6 @@ public class OnyxSchedulerIT {
     return restTemplate.postForEntity(appUrl + ONYX_TEST_GROUP_JOBS_PATH,
       new HttpEntity<>(requestBody, headers),
       String.class);
-  }
-
-  @Test
-  public void shouldFireHttpRequestWithReachableFutureDate() {
-    String jobName = "reachableFuture";
-    String requestBody =
-      buildFixedTimeJobRequestBodyFromNameAndFixedTime(jobName, buildReachableFutureDate());
-    ResponseEntity<String> response = scheduleJob(requestBody);
-
-    assertThat(response.getStatusCode(), is(HttpStatus.CREATED));
-    pollingVerifyJobRequest(jobName);
-  }
-
-  private Date buildReachableFutureDate() {
-    return toDate(LocalDateTime.now().plusSeconds(3));
-  }
-
-  @Test
-  public void shouldNotFireHttpRequestWithNonReachableFutureDate() {
-    String jobName = "nonReachableFuture";
-    String requestBody =
-      buildFixedTimeJobRequestBodyFromNameAndFixedTime(jobName, buildNonReachableFutureDate());
-    ResponseEntity<String> response = scheduleJob(requestBody);
-
-    assertThat(response.getStatusCode(), is(HttpStatus.CREATED));
-    try {
-      pollingVerifyJobRequest(jobName);
-      fail("Received request when it should not trigger");
-    } catch (VerificationException ignored) {
-
-    }
-  }
-
-  private Date buildNonReachableFutureDate() {
-    return toDate(LocalDateTime.now().plusMinutes(1));
   }
 
   @Test

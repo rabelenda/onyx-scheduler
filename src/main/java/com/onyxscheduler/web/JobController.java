@@ -50,7 +50,7 @@ public class JobController {
     public ResponseEntity<Job> addJob(@PathVariable String group, @RequestBody Job job)
             throws NonMatchingGroupsException, Scheduler.DuplicateJobKeyException {
         if (job.getGroup() != null && !job.getGroup().equals(group)) {
-            //throwing an exception instead of ResponseEntity.badRequest().build() to have a descriptive description of the bad request
+            //throwing an exception instead of ResponseEntity.badRequest().build() to have a proper description of the bad request
             throw new NonMatchingGroupsException(group, job.getGroup());
         }
         job.setGroup(group);

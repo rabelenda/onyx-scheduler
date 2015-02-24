@@ -17,48 +17,29 @@
 package com.onyxscheduler.quartz;
 
 import org.quartz.impl.StdSchedulerFactory;
-import org.quartz.impl.jdbcjobstore.DriverDelegate;
-import org.quartz.spi.JobStore;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import java.util.Properties;
 
-@ConfigurationProperties(prefix = QuartzProperties.PREFIX)
+@ConfigurationProperties(prefix = "quartz")
 public class QuartzProperties {
 
-    public static final String PREFIX = "quartz";
+    private Integer threadCount;
 
-    public Properties buildQuartzProperties() {
-        return jobstore.buildQuartzProperties();
+    private JobStoreProperties jobstore = new JobStoreProperties();
+
+    public void setThreadCount(int threadCount) {
+        this.threadCount = threadCount;
+    }
+
+    public JobStoreProperties getJobstore() {
+        return jobstore;
     }
 
     public static class JobStoreProperties {
 
-        private Class<? extends JobStore> clazz;
-
-        private Class<? extends DriverDelegate> driverDelegateClass;
-
         private Boolean isClustered;
-
-        public Class<? extends JobStore> getClazz() {
-            return clazz;
-        }
-
-        public void setClazz(Class<? extends JobStore> clazz) {
-            this.clazz = clazz;
-        }
-
-        public Class<? extends DriverDelegate> getDriverDelegateClass() {
-            return driverDelegateClass;
-        }
-
-        public void setDriverDelegateClass(Class<? extends DriverDelegate> driverDelegateClass) {
-            this.driverDelegateClass = driverDelegateClass;
-        }
-
-        public boolean isClustered() {
-            return isClustered;
-        }
 
         public void setClustered(boolean isClustered) {
             this.isClustered = isClustered;
@@ -66,27 +47,27 @@ public class QuartzProperties {
 
         public Properties buildQuartzProperties() {
             Properties props = new Properties();
-            if (clazz != null) {
-                props.put(StdSchedulerFactory.PROP_JOB_STORE_CLASS, clazz);
-            }
-            if (driverDelegateClass != null) {
-                props.put(StdSchedulerFactory.PROP_JOB_STORE_PREFIX + "driverDelegateClass", driverDelegateClass);
-            }
+            /* using setProperty with string parameters, since quartz uses getProperty,
+            which gets nulls when getting non string values
+             */
+            //using properties to avoid serialization issues of objects
+            props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_USE_PROP, Boolean.toString(true));
             if (isClustered != null) {
-                props.put(StdSchedulerFactory.PROP_JOB_STORE_PREFIX + "isClustered", isClustered);
+                props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_PREFIX + ".isClustered", isClustered.toString());
             }
             return props;
         }
     }
 
-    private JobStoreProperties jobstore = new JobStoreProperties();
-
-    public JobStoreProperties getJobstore() {
-        return jobstore;
-    }
-
-    public void setJobstore(JobStoreProperties jobstore) {
-        this.jobstore = jobstore;
+    public Properties buildQuartzProperties() {
+        Properties props = new Properties();
+        //skip the check to don't bother with quartz updates
+        props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, Boolean.toString(true));
+        props.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_ID, StdSchedulerFactory.AUTO_GENERATE_INSTANCE_ID);
+        if (threadCount != null) {
+            props.setProperty(SchedulerFactoryBean.PROP_THREAD_COUNT, threadCount.toString());
+        }
+        return props;
     }
 
 }

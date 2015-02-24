@@ -17,6 +17,7 @@
 package com.onyxscheduler.quartz;
 
 import org.quartz.spi.JobFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +28,7 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import javax.sql.DataSource;
 import java.util.Optional;
+import java.util.Properties;
 
 @Configuration
 @EnableConfigurationProperties(QuartzProperties.class)
@@ -39,12 +41,26 @@ public class QuartzConfiguration {
 
     @Bean
     public SchedulerFactoryBean quartzSchedulerFactory(JobFactory jobFactory, Optional<DataSource> dataSource,
-                                                       QuartzProperties quartzProperties) {
+                                                       @Qualifier("quartzProperties") Properties quartzProperties) {
         SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
         schedulerFactoryBean.setJobFactory(jobFactory);
         schedulerFactoryBean.setDataSource(dataSource.orElse(null));
-        schedulerFactoryBean.setQuartzProperties(quartzProperties.buildQuartzProperties());
+        schedulerFactoryBean.setQuartzProperties(quartzProperties);
         return schedulerFactoryBean;
+    }
+
+    @Profile("default")
+    @Bean(name = "quartzProperties")
+    public Properties quartzProperties(QuartzProperties quartzProperties) {
+        return quartzProperties.buildQuartzProperties();
+    }
+
+    @Profile("mysql-jobstore")
+    @Bean(name = "quartzProperties")
+    public Properties quartzJobStoreProperties(QuartzProperties quartzProperties) {
+        Properties props = quartzProperties.buildQuartzProperties();
+        props.putAll(quartzProperties.getJobstore().buildQuartzProperties());
+        return props;
     }
 
     @Configuration

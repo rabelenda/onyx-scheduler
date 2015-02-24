@@ -10,13 +10,14 @@ security:
     name: admin
     password: admin
 
+quartz:
+  threadCount: 15
+
 ---
 
 quartz:
   jobstore:
-    clazz: org.quartz.impl.jdbcjobstore.JobStoreTX
-    driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
-    clustered: true
+    clustered: false
 
 spring:
   profiles: mysql-jobstore

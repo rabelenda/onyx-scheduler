@@ -7,9 +7,9 @@ This work started as a port of [qzui](https://github.com/xhanin/qzui) to [spring
 The main motivation is to have a simple (simpler than quartz) service for scheduling jobs in a persistent fashion (we are targeting for not overflowing memory and be resilient to nodes going down), with a rest endpoint which could allow any number of other services which provide callback URLs to use onyx scheduler to schedule invocations to such URLs, and in that way execute scheduled business logic abstracting complexity of providing and managing persistence storage and quartz for each of those services. Additionally I created it to have a playground for some technologies and practices.
 
 Obviously by using onyx instead of quartz you add additional point of failures, network overhead, lose nice integration with frameworks, etc; but it basically has the advantages of a microservice based ecosystem adding a lot more flexibility allowing to 
- scale the scheduler part, isolating it from the rest of the business logic with more controlover it, and flexibility to improve/extend its code (for example changing the storage when needed with change of traffic).
+ scale the scheduler part, isolating it from the rest of the business logic with more control over it, and flexibility to improve/extend its code (for example changing the storage when needed with change of traffic).
   
-A point to take into consideration when submitting jobs is that to avoid putting load on onyx the callback URLs should respond fast or work asynchronously: if the request invocation could take seconds consider making the URL just queue the job and then have a worker consuming from the queue.
+A point to take into consideration when submitting jobs is that to avoid putting load on onyx the callback URLs should respond fast or work asynchronously: if the request invocation could take seconds consider making the URL just queue the job and then have a worker consuming from the queue. Another option is having dedicated instances of onyx scheduler just for those slow processes, and other instances for the fast running ones.
 
 ##Building
 
@@ -93,6 +93,11 @@ You can check `application.yml` and spring-boot documentation. Later on I will a
 ##Contributing
 
 Please feel free to send pull requests or fork, or send questions and proposals as issues.
+
+##Clustering
+
+When used in a cluster, keep the number of instances low per database due to the limitations of the clustering of quartz with JdbcStore. Use it mainly as a way of achieving high availability and not scalability while we don't implement a more efficient way of clustering (use a different job store). If you need to scale more the you can follow the advise of quartz documentation about sharding loads to different instances of quartz scheduler.
+Additionally make sure that servers running the instances have synchronized clocks  (the clocks must be within a second of each other).
 
 ###Extending
 

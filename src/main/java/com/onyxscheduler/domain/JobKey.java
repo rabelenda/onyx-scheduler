@@ -17,15 +17,16 @@
 package com.onyxscheduler.domain;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import java.util.*;
+
+import java.util.Objects;
 
 /**
- * Simple abstraction of job keys analogous to quartz JobKey.
- * <p/>
- * This class was created to not have dependencies from JobController to any quartz class and
- * make it simpler and would simplify potential migration out of quartz.
+ * Simple abstraction of job keys analogous to quartz JobKey. <p/> This class was created to not
+ * have dependencies from JobController to any quartz class and make it simpler and would simplify
+ * potential migration out of quartz.
  */
 public class JobKey {
+
   private final String name;
   private final String group;
 
@@ -72,9 +73,9 @@ public class JobKey {
   @Override
   public String toString() {
     return com.google.common.base.Objects.toStringHelper(this)
-      .add("name", name)
-      .add("group", group)
-      .toString();
+        .add("name", name)
+        .add("group", group)
+        .toString();
   }
 
 }

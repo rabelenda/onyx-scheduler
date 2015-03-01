@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.onyxscheduler;
+package com.onyxscheduler.domain;
 
-public class QuartzPersistenceIT {
+public class HttpJobQuartzExecutionIT {
 
-  //TODO test that persistence works (shutdown and restart app to see jobs are persisted)
+  //TODO test quartz job creation and execution
+
 }

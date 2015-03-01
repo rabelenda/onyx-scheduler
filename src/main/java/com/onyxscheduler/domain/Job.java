@@ -16,38 +16,40 @@
 
 package com.onyxscheduler.domain;
 
+import com.google.common.base.Throwables;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.google.common.base.Throwables;
-import org.hibernate.validator.constraints.NotEmpty;
-import org.quartz.*;
 
-import javax.validation.Valid;
+import org.hibernate.validator.constraints.NotEmpty;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
+
 /**
  * Jobs are the basic unit of work of onyx scheduler. They host the logic to be executed once the
  * given triggers are fired and required configuration to be able to serialize/de-serialize these
- * jobs from/to JSON.
- * <p/>
- * Additionally they currently have the logic for handling the interaction with underlying quartz
- * creating jobs and triggers from jobDetails and quartz Triggers, and vice versa.
- * <p/>
- * When creating a new Job type (for example if you want some job for queuing in RabbitMQ or
- * whatever) you just have to extend this class implementing the run method and add the
+ * jobs from/to JSON. <p/> Additionally they currently have the logic for handling the interaction
+ * with underlying quartz creating jobs and triggers from jobDetails and quartz Triggers, and vice
+ * versa. <p/> When creating a new Job type (for example if you want some job for queuing in
+ * RabbitMQ or whatever) you just have to extend this class implementing the run method and add the
  * appropriate JsonSubTypes.Type configuration in this file mapping the class to the appropriate
- * value of type field of the JSON representation.
- * <p/>
- * As they currently host interaction with quartz Jobs, they need to provide proper
- * buildQuartzJobDetail implementation to be able to restore all needed configuration needed by
- * run and parsed by initFromQuartzJobDataMap.
+ * value of type field of the JSON representation. <p/> As they currently host interaction with
+ * quartz Jobs, they need to provide proper buildQuartzJobDetail implementation to be able to
+ * restore all needed configuration needed by run and parsed by initFromQuartzJobDataMap.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(value = HttpJob.class, name = "http")})
 public abstract class Job implements org.quartz.Job, Runnable {
+
   private static final String ID_DATAMAP_KEY = "id";
   /* This id is manly for tracing because a job could be created and another could use same name
      and group afterwards, but with this id both jobs will have different ids */
@@ -98,8 +100,8 @@ public abstract class Job implements org.quartz.Job, Runnable {
 
   public Set<org.quartz.Trigger> buildQuartzTriggers() {
     return triggers.stream().
-      map(Trigger::buildQuartzTrigger).
-      collect(Collectors.toSet());
+        map(Trigger::buildQuartzTrigger).
+        collect(Collectors.toSet());
   }
 
   public JobDetail buildQuartzJobDetail() {
@@ -108,15 +110,15 @@ public abstract class Job implements org.quartz.Job, Runnable {
     dataMap.putAll(buildDataMap());
 
     return org.quartz.JobBuilder.newJob(getClass())
-      .withIdentity(name, group)
-      .usingJobData(dataMap)
-      .build();
+        .withIdentity(name, group)
+        .usingJobData(dataMap)
+        .build();
   }
 
   protected abstract Map<String, Object> buildDataMap();
 
   public static Job fromQuartzJobDetailAndTriggers(JobDetail jobDetail,
-    Set<? extends org.quartz.Trigger> triggers) {
+                                                   Set<? extends org.quartz.Trigger> triggers) {
     try {
       Job job = (Job) jobDetail.getJobClass().newInstance();
       org.quartz.JobKey jobKey = jobDetail.getKey();
@@ -124,8 +126,8 @@ public abstract class Job implements org.quartz.Job, Runnable {
       job.setName(jobKey.getName());
       job.setGroup(jobKey.getGroup());
       job.setTriggers(triggers.stream()
-        .map(Trigger::fromQuartzTrigger)
-        .collect(Collectors.toSet()));
+                          .map(Trigger::fromQuartzTrigger)
+                          .collect(Collectors.toSet()));
       job.initFromDataMap(jobDetail.getJobDataMap());
       return job;
     } catch (InstantiationException | IllegalAccessException e) {

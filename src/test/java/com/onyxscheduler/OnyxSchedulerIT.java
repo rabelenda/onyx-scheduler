@@ -16,12 +16,12 @@
 
 package com.onyxscheduler;
 
-import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
+
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+
 import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -32,24 +32,36 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.TestRestTemplate;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.any;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.findAll;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.onyxscheduler.util.FreemarkerUtils.solveTemplate;
 import static com.onyxscheduler.util.PollingVerifier.pollingVerify;
 import static com.onyxscheduler.util.TriggerTestUtils.CRON;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -84,7 +96,6 @@ public class OnyxSchedulerIT {
 
   private String appUrl;
 
-  @SuppressWarnings("SpringJavaAutowiredMembersInspection")
   @Autowired
   private Configuration freemarkerConfig;
 
@@ -119,22 +130,12 @@ public class OnyxSchedulerIT {
   }
 
   private String buildFixedTimeJobRequestBodyFromNameAndFixedTime(String jobName, Date fixedDate) {
-    ImmutableMap<String, Serializable> model = ImmutableMap.of(PORT_TEMPLATE_PROPERTY_KEY,
-      wireMockRule.port(),
-      JOB_NAME_TEMPLATE_PROPERTY_KEY,
-      jobName,
-      FIXED_DATE_TEMPLATE_PROPERTY_KEY,
-      fixedDate);
-    return solveTemplate("jobWithFixedDate.json.ftl", model);
-  }
-
-  private String solveTemplate(String templateName, ImmutableMap<String, Serializable> model) {
-    try {
-      Template template = freemarkerConfig.getTemplate(templateName);
-      return FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
-    } catch (IOException | TemplateException e) {
-      throw Throwables.propagate(e);
-    }
+    ImmutableMap<String, Serializable> model = ImmutableMap.<String, Serializable>builder()
+        .put(PORT_TEMPLATE_PROPERTY_KEY, wireMockRule.port())
+        .put(JOB_NAME_TEMPLATE_PROPERTY_KEY, jobName)
+        .put(FIXED_DATE_TEMPLATE_PROPERTY_KEY, fixedDate)
+        .build();
+    return solveTemplate(freemarkerConfig, "jobWithFixedDate.json.ftl", model);
   }
 
   private Date buildPastDate() {
@@ -149,8 +150,8 @@ public class OnyxSchedulerIT {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     return restTemplate.postForEntity(appUrl + ONYX_TEST_GROUP_JOBS_PATH,
-      new HttpEntity<>(requestBody, headers),
-      String.class);
+                                      new HttpEntity<>(requestBody, headers),
+                                      String.class);
   }
 
   @Test
@@ -165,19 +166,20 @@ public class OnyxSchedulerIT {
 
   private void pollingVerifyJobRequestWithAtLeastCount(int count, String jobName) {
     pollingVerify(() -> assertThat(findAll(postRequestedFor(urlEqualTo(getUrlFromJobName(jobName)
-      )).withRequestBody(equalTo("{\"field\":\"value\"}")).withHeader(HttpHeaders.CONTENT_TYPE,
-        equalTo(MediaType.APPLICATION_JSON_VALUE))),
-      hasSize(greaterThanOrEqualTo(count))));
+                                   )).withRequestBody(equalTo("{\"field\":\"value\"}"))
+                                               .withHeader(HttpHeaders.CONTENT_TYPE,
+                                                           equalTo(
+                                                               MediaType.APPLICATION_JSON_VALUE))),
+                                   hasSize(greaterThanOrEqualTo(count))));
   }
 
   private String buildCronJobRequestBodyFromNameAndCronExpression(String jobName, String cron) {
-    ImmutableMap<String, Serializable> model = ImmutableMap.of(PORT_TEMPLATE_PROPERTY_KEY,
-      wireMockRule.port(),
-      JOB_NAME_TEMPLATE_PROPERTY_KEY,
-      jobName,
-      CRON_TEMPLATE_PROPERTY_KEY,
-      cron);
-    return solveTemplate("jobWithCronAndHttpPost.json.ftl", model);
+    ImmutableMap<String, Serializable> model = ImmutableMap.<String, Serializable>builder()
+        .put(PORT_TEMPLATE_PROPERTY_KEY, wireMockRule.port())
+        .put(JOB_NAME_TEMPLATE_PROPERTY_KEY, jobName)
+        .put(CRON_TEMPLATE_PROPERTY_KEY, cron)
+        .build();
+    return solveTemplate(freemarkerConfig, "jobWithCronAndHttpPost.json.ftl", model);
   }
 
 }

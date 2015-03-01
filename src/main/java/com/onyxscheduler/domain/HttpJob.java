@@ -16,15 +16,13 @@
 
 package com.onyxscheduler.domain;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import javax.validation.constraints.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +32,18 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.validation.constraints.NotNull;
+
 /**
- * Job which executes http requests logging their response when they are done.
- * <p/>
- * Currently no HTTP headers are supported. And by default the POST method is used if not specified.
+ * Job which executes http requests logging their response when they are done. <p/> Currently no
+ * HTTP headers are supported. And by default the POST method is used if not specified.
  */
 
 public class HttpJob extends Job {
@@ -52,7 +58,7 @@ public class HttpJob extends Job {
   private URL url;
   private HttpMethod method = HttpMethod.POST;
   private String body;
-  private Map<String,String> headers = Collections.emptyMap();
+  private Map<String, String> headers = Collections.emptyMap();
 
   @SuppressWarnings("SpringJavaAutowiredMembersInspection")
   @Autowired
@@ -115,8 +121,8 @@ public class HttpJob extends Job {
   @Override
   protected Map<String, Object> buildDataMap() {
     ImmutableMap.Builder<String, Object> builder = ImmutableMap.<String, Object>builder()
-      .put(URL_DATAMAP_KEY, url.toString())
-      .put(METHOD_DATAMAP_KEY, method.toString());
+        .put(URL_DATAMAP_KEY, url.toString())
+        .put(METHOD_DATAMAP_KEY, method.toString());
     if (body != null) {
       builder.put(BODY_DATAMAP_KEY, body);
     }
@@ -147,7 +153,7 @@ public class HttpJob extends Job {
     headers.forEach(httpHeaders::add);
     HttpEntity<String> request = new HttpEntity<>(body, httpHeaders);
     ResponseEntity<String> response =
-      restTemplate.exchange(url.toString(), method, request, String.class);
+        restTemplate.exchange(url.toString(), method, request, String.class);
     int code = response.getStatusCode().value();
     String responseBody = response.getBody();
     LOG.info("{}", new HttpAuditRecord(this, code, responseBody));
@@ -168,23 +174,23 @@ public class HttpJob extends Job {
     }
     final HttpJob other = (HttpJob) obj;
     return Objects.equals(this.id, other.id) && Objects.equals(this.group, other.group)
-      && Objects.equals(this.name, other.name) && Objects.equals(this.triggers, other.triggers)
-      && Objects.equals(this.url, other.url) && Objects.equals(this.method, other.method) && Objects
-      .equals(this.body, other.body) && Objects.equals(this.headers, other.headers);
+           && Objects.equals(this.name, other.name) && Objects.equals(this.triggers, other.triggers)
+           && Objects.equals(this.url, other.url) && Objects.equals(this.method, other.method)
+           && Objects.equals(this.body, other.body) && Objects.equals(this.headers, other.headers);
   }
 
   @Override
   public String toString() {
     return com.google.common.base.Objects.toStringHelper(this)
-      .add("id", id)
-      .add("group", group)
-      .add("name", name)
-      .add("triggers", triggers)
-      .add("url", url)
-      .add("method", method)
-      .add("body", body)
-      .add("headers", headers)
-      .toString();
+        .add("id", id)
+        .add("group", group)
+        .add("name", name)
+        .add("triggers", triggers)
+        .add("url", url)
+        .add("method", method)
+        .add("body", body)
+        .add("headers", headers)
+        .toString();
   }
 
   private static class HttpAuditRecord {
@@ -194,9 +200,9 @@ public class HttpJob extends Job {
     private final String responseBody;
 
     private HttpAuditRecord(
-      HttpJob request,
-      int responseCode,
-      String responseBody) {
+        HttpJob request,
+        int responseCode,
+        String responseBody) {
       this.request = request;
       this.responseCode = responseCode;
       this.responseBody = responseBody;
@@ -205,10 +211,10 @@ public class HttpJob extends Job {
     @Override
     public String toString() {
       return com.google.common.base.Objects.toStringHelper(this)
-        .add("request", request)
-        .add("responseCode", responseCode)
-        .add("responseBody", responseBody)
-        .toString();
+          .add("request", request)
+          .add("responseCode", responseCode)
+          .add("responseBody", responseBody)
+          .toString();
     }
   }
 

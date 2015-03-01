@@ -18,6 +18,7 @@ package com.onyxscheduler.domain;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+
 import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerException;
@@ -27,16 +28,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.validation.Valid;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
+
 /**
- * Adapter to use quartz scheduler with onyx jobs.
- * <p/>
- * This class abstracts interaction with quartz classes allowing JobController and other potential
- * client classes to be agnostic of quartz internals.
+ * Adapter to use quartz scheduler with onyx jobs. <p/> This class abstracts interaction with quartz
+ * classes allowing JobController and other potential client classes to be agnostic of quartz
+ * internals.
  */
 @Service
 public class Scheduler {
@@ -64,6 +65,7 @@ public class Scheduler {
   }
 
   public static class DuplicateJobKeyException extends Exception {
+
     public DuplicateJobKeyException(String group, String name, ObjectAlreadyExistsException e) {
       super("already exists a job in group '" + group + "' with name '" + name + "'.", e);
     }
@@ -72,9 +74,9 @@ public class Scheduler {
   public Set<JobKey> getJobKeys() {
     try {
       return quartzScheduler.getJobKeys(GroupMatcher.anyJobGroup())
-        .stream()
-        .map(JobKey::fromQuartzJobKey)
-        .collect(Collectors.toSet());
+          .stream()
+          .map(JobKey::fromQuartzJobKey)
+          .collect(Collectors.toSet());
     } catch (SchedulerException e) {
       throw Throwables.propagate(e);
     }
@@ -83,9 +85,9 @@ public class Scheduler {
   public Set<JobKey> getJobKeysByGroup(String group) {
     try {
       return quartzScheduler.getJobKeys(GroupMatcher.jobGroupEquals(group))
-        .stream()
-        .map(JobKey::fromQuartzJobKey)
-        .collect(Collectors.toSet());
+          .stream()
+          .map(JobKey::fromQuartzJobKey)
+          .collect(Collectors.toSet());
     } catch (SchedulerException e) {
       throw Throwables.propagate(e);
     }
@@ -100,7 +102,7 @@ public class Scheduler {
       }
 
       Set<org.quartz.Trigger> quartzTriggers =
-        ImmutableSet.copyOf(quartzScheduler.getTriggersOfJob(jobDetail.getKey()));
+          ImmutableSet.copyOf(quartzScheduler.getTriggersOfJob(jobDetail.getKey()));
       return Optional.of(Job.fromQuartzJobDetailAndTriggers(jobDetail, quartzTriggers));
     } catch (SchedulerException e) {
       throw Throwables.propagate(e);

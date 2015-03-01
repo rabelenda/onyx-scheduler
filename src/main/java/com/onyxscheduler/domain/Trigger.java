@@ -17,17 +17,19 @@
 package com.onyxscheduler.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.*;
-import javax.validation.constraints.*;
+
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.TriggerBuilder;
 
+import java.util.Date;
+import java.util.Objects;
+
+import javax.validation.constraints.AssertTrue;
+
 /**
- * Specifies a scheduling to be used in a job.
- * <p/>
- * Simpler abstraction than quartz triggers which easily binds to the desired JSON representation
- * for triggers.
+ * Specifies a scheduling to be used in a job. <p/> Simpler abstraction than quartz triggers which
+ * easily binds to the desired JSON representation for triggers.
  */
 public class Trigger {
 
@@ -71,8 +73,8 @@ public class Trigger {
   public org.quartz.Trigger buildQuartzTrigger() {
     if (cron != null) {
       return TriggerBuilder.newTrigger()
-        .withSchedule(CronScheduleBuilder.cronSchedule(cron))
-        .build();
+          .withSchedule(CronScheduleBuilder.cronSchedule(cron))
+          .build();
     } else {
       return TriggerBuilder.newTrigger().startAt(when).build();
     }
@@ -107,9 +109,9 @@ public class Trigger {
   @Override
   public String toString() {
     return com.google.common.base.Objects.toStringHelper(this)
-      .add("when", when)
-      .add("cron", cron)
-      .toString();
+        .add("when", when)
+        .add("cron", cron)
+        .toString();
   }
 
 }

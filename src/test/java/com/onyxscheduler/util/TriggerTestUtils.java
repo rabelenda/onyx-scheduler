@@ -16,15 +16,20 @@
 
 package com.onyxscheduler.util;
 
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.onyxscheduler.domain.Trigger;
-import java.text.*;
-import java.util.*;
+
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.TriggerBuilder;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Set;
 
 public class TriggerTestUtils {
 
@@ -39,6 +44,9 @@ public class TriggerTestUtils {
     } catch (ParseException e) {
       throw Throwables.propagate(e);
     }
+  }
+
+  private TriggerTestUtils() {
   }
 
   public static Set<Trigger> buildTriggers() {

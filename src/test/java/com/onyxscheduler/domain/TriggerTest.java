@@ -16,26 +16,27 @@
 
 package com.onyxscheduler.domain;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 import com.onyxscheduler.util.TriggerTestUtils;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class TriggerTest {
 
   @Test
   public void shouldGetTriggerWithCronWhenFromCronExpression() {
     assertThat(Trigger.fromCronExpression(TriggerTestUtils.CRON).getCron(), Matchers.is(
-      TriggerTestUtils.CRON));
+        TriggerTestUtils.CRON));
   }
 
   @Test
   public void shouldGetTriggerWithFixedTimeWhenFromFixedDate() {
     assertThat(Trigger.fromFixedTime(TriggerTestUtils.FIXED_TIME).getWhen(), Matchers.is(
-      TriggerTestUtils.FIXED_TIME));
+        TriggerTestUtils.FIXED_TIME));
   }
 
   @Test

@@ -18,11 +18,15 @@ package com.onyxscheduler.domain;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
-import java.net.*;
+
 import org.junit.Test;
 import org.springframework.http.HttpMethod;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 public class HttpJobTest extends JobTest {
+
   private static final URL URL = buildUrl();
 
   private static URL buildUrl() {

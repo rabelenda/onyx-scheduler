@@ -26,47 +26,50 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
-import javax.sql.DataSource;
 import java.util.Optional;
 import java.util.Properties;
+
+import javax.sql.DataSource;
 
 @Configuration
 @EnableConfigurationProperties(QuartzProperties.class)
 public class QuartzConfiguration {
 
-    @Bean
-    public JobFactory jobFactory() {
-        return new AutowiringSpringBeanJobFactory();
-    }
+  @Bean
+  public JobFactory jobFactory() {
+    return new AutowiringSpringBeanJobFactory();
+  }
 
-    @Bean
-    public SchedulerFactoryBean quartzSchedulerFactory(JobFactory jobFactory, Optional<DataSource> dataSource,
-                                                       @Qualifier("quartzProperties") Properties quartzProperties) {
-        SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
-        schedulerFactoryBean.setJobFactory(jobFactory);
-        schedulerFactoryBean.setDataSource(dataSource.orElse(null));
-        schedulerFactoryBean.setQuartzProperties(quartzProperties);
-        return schedulerFactoryBean;
-    }
+  @Bean
+  public SchedulerFactoryBean quartzSchedulerFactory(JobFactory jobFactory,
+                                                     Optional<DataSource> dataSource,
+                                                     @Qualifier("quartzProperties") Properties quartzProperties) {
+    SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
+    schedulerFactoryBean.setJobFactory(jobFactory);
+    schedulerFactoryBean.setDataSource(dataSource.orElse(null));
+    schedulerFactoryBean.setQuartzProperties(quartzProperties);
+    return schedulerFactoryBean;
+  }
 
-    @Profile("default")
-    @Bean(name = "quartzProperties")
-    public Properties quartzProperties(QuartzProperties quartzProperties) {
-        return quartzProperties.buildQuartzProperties();
-    }
+  @Profile("default")
+  @Bean(name = "quartzProperties")
+  public Properties quartzProperties(QuartzProperties quartzProperties) {
+    return quartzProperties.buildQuartzProperties();
+  }
 
-    @Profile("mysql-jobstore")
-    @Bean(name = "quartzProperties")
-    public Properties quartzJobStoreProperties(QuartzProperties quartzProperties) {
-        Properties props = quartzProperties.buildQuartzProperties();
-        props.putAll(quartzProperties.getJobstore().buildQuartzProperties());
-        return props;
-    }
+  @Profile("mysql-jobstore")
+  @Bean(name = "quartzProperties")
+  public Properties quartzJobStoreProperties(QuartzProperties quartzProperties) {
+    Properties props = quartzProperties.buildQuartzProperties();
+    props.putAll(quartzProperties.getJobstore().buildQuartzProperties());
+    return props;
+  }
 
-    @Configuration
-    @Profile("mysql-jobstore")
-    @Import(DataSourceAutoConfiguration.class)
-    public static class QuartzJobStoreConfiguration {
-    }
+  @Configuration
+  @Profile("mysql-jobstore")
+  @Import(DataSourceAutoConfiguration.class)
+  public static class QuartzJobStoreConfiguration {
+
+  }
 
 }

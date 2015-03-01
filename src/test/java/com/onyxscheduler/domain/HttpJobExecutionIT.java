@@ -16,23 +16,41 @@
 
 package com.onyxscheduler.domain;
 
-import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.google.common.collect.ImmutableMap;
+
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import com.onyxscheduler.OnyxSchedulerApplication;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.any;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
-public class HttpJobIT {
+@RunWith(SpringJUnit4ClassRunner.class)
+@Configuration
+@SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
+public class HttpJobExecutionIT {
 
   public static final String TEST_PATH = "/test";
 
@@ -81,33 +99,28 @@ public class HttpJobIT {
 
   @Test
   public void shouldSendSpecifiedHeadersToServerWhenRunWithHeaders() {
-    String key1 = "k1", key2= "k2", value1= "v1", value2="v2";
+    String key1 = "k1", key2 = "k2", value1 = "v1", value2 = "v2";
     job.setHeaders(ImmutableMap.of(key1, value1, key2, value2));
     job.run();
     verify(postRequestedFor(urlEqualTo(TEST_PATH))
-      .withHeader(key1, equalTo(value1))
-      .withHeader(key2, equalTo(value2)));
+               .withHeader(key1, equalTo(value1))
+               .withHeader(key2, equalTo(value2)));
   }
 
   @Test
   public void shouldSendMultiValuedHeadersToServerWhenRunWithMultiValuedHeaders() {
-    String key = "k1", multiValue= "v1,v2";
+    String key = "k1", multiValue = "v1,v2";
     job.setHeaders(ImmutableMap.of(key, multiValue));
     job.run();
-    verify(postRequestedFor(urlEqualTo(TEST_PATH))
-      .withHeader(key, equalTo(multiValue)));
+    verify(postRequestedFor(urlEqualTo(TEST_PATH)).withHeader(key, equalTo(multiValue)));
   }
 
   @Test
   public void shouldSendSpecifiedContentTypeToServerWhenRunWithContentTypeHeader() {
-    String key = HttpHeaders.CONTENT_TYPE, value= MediaType.APPLICATION_JSON_VALUE;
+    String key = HttpHeaders.CONTENT_TYPE, value = MediaType.APPLICATION_JSON_VALUE;
     job.setHeaders(ImmutableMap.of(key, value));
     job.run();
-    verify(postRequestedFor(urlEqualTo(TEST_PATH))
-      .withHeader(key, equalTo(value)));
+    verify(postRequestedFor(urlEqualTo(TEST_PATH)).withHeader(key, equalTo(value)));
   }
-
-  //TODO test json serialization
-  //TODO test quartz job creation and execution
 
 }

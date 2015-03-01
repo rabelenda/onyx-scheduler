@@ -23,28 +23,28 @@ import java.util.concurrent.TimeUnit;
 
 public class PollingVerifier {
 
-    private static final long VERIFYING_POLL_PERIOD_IN_MILLIS = 500;
-    private static final long VERIFYING_POLL_TIMEOUT_IN_MILLIS = 5000;
+  private static final long VERIFYING_POLL_PERIOD_IN_MILLIS = 500;
+  private static final long VERIFYING_POLL_TIMEOUT_IN_MILLIS = 5000;
 
-    public static void pollingVerify(Runnable verify) {
-        AssertionError lastVerification;
-        Stopwatch watch = Stopwatch.createStarted();
-        do {
-            try {
-                lastVerification = null;
-                verify.run();
-            } catch (AssertionError e) {
-                lastVerification = e;
-                try {
-                    Thread.sleep(VERIFYING_POLL_PERIOD_IN_MILLIS);
-                } catch (InterruptedException e1) {
-                    Throwables.propagate(e1);
-                }
-            }
-        } while (watch.elapsed(TimeUnit.MILLISECONDS) < VERIFYING_POLL_TIMEOUT_IN_MILLIS);
-        if (lastVerification != null) {
-            throw lastVerification;
+  public static void pollingVerify(Runnable verify) {
+    AssertionError lastVerification;
+    Stopwatch watch = Stopwatch.createStarted();
+    do {
+      try {
+        lastVerification = null;
+        verify.run();
+      } catch (AssertionError e) {
+        lastVerification = e;
+        try {
+          Thread.sleep(VERIFYING_POLL_PERIOD_IN_MILLIS);
+        } catch (InterruptedException e1) {
+          Throwables.propagate(e1);
         }
+      }
+    } while (watch.elapsed(TimeUnit.MILLISECONDS) < VERIFYING_POLL_TIMEOUT_IN_MILLIS);
+    if (lastVerification != null) {
+      throw lastVerification;
     }
+  }
 
 }

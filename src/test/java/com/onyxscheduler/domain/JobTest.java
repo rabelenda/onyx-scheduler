@@ -16,11 +16,11 @@
 
 package com.onyxscheduler.domain;
 
+import java.util.Set;
+
 import static com.onyxscheduler.util.TriggerTestUtils.buildTriggers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
-import java.util.*;
 
 public abstract class JobTest {
 
@@ -38,7 +38,8 @@ public abstract class JobTest {
     originalJob.setTriggers(triggers);
 
     Job restoredJob =
-      Job.fromQuartzJobDetailAndTriggers(originalJob.buildQuartzJobDetail(), originalJob.buildQuartzTriggers());
+        Job.fromQuartzJobDetailAndTriggers(originalJob.buildQuartzJobDetail(),
+                                           originalJob.buildQuartzTriggers());
 
     assertThat(restoredJob, is(originalJob));
   }

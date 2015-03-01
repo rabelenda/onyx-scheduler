@@ -25,49 +25,51 @@ import java.util.Properties;
 @ConfigurationProperties(prefix = "quartz")
 public class QuartzProperties {
 
-    private Integer threadCount;
+  private Integer threadCount;
 
-    private JobStoreProperties jobstore = new JobStoreProperties();
+  private JobStoreProperties jobstore = new JobStoreProperties();
 
-    public void setThreadCount(int threadCount) {
-        this.threadCount = threadCount;
-    }
+  public void setThreadCount(int threadCount) {
+    this.threadCount = threadCount;
+  }
 
-    public JobStoreProperties getJobstore() {
-        return jobstore;
-    }
+  public JobStoreProperties getJobstore() {
+    return jobstore;
+  }
 
-    public static class JobStoreProperties {
+  public static class JobStoreProperties {
 
-        private Boolean isClustered;
+    private Boolean isClustered;
 
-        public void setClustered(boolean isClustered) {
-            this.isClustered = isClustered;
-        }
-
-        public Properties buildQuartzProperties() {
-            Properties props = new Properties();
-            /* using setProperty with string parameters, since quartz uses getProperty,
-            which gets nulls when getting non string values
-             */
-            //using properties to avoid serialization issues of objects
-            props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_USE_PROP, Boolean.toString(true));
-            if (isClustered != null) {
-                props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_PREFIX + ".isClustered", isClustered.toString());
-            }
-            return props;
-        }
+    public void setClustered(boolean isClustered) {
+      this.isClustered = isClustered;
     }
 
     public Properties buildQuartzProperties() {
-        Properties props = new Properties();
-        //skip the check to don't bother with quartz updates
-        props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, Boolean.toString(true));
-        props.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_ID, StdSchedulerFactory.AUTO_GENERATE_INSTANCE_ID);
-        if (threadCount != null) {
-            props.setProperty(SchedulerFactoryBean.PROP_THREAD_COUNT, threadCount.toString());
-        }
-        return props;
+      Properties props = new Properties();
+            /* using setProperty with string parameters, since quartz uses getProperty,
+            which gets nulls when getting non string values
+             */
+      //using properties to avoid serialization issues of objects
+      props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_USE_PROP, Boolean.toString(true));
+      if (isClustered != null) {
+        props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_PREFIX + ".isClustered",
+                          isClustered.toString());
+      }
+      return props;
     }
+  }
+
+  public Properties buildQuartzProperties() {
+    Properties props = new Properties();
+    //skip the check to don't bother with quartz updates
+    props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, Boolean.toString(true));
+    props.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_ID,
+                      StdSchedulerFactory.AUTO_GENERATE_INSTANCE_ID);
+    if (threadCount != null) {
+      props.setProperty(SchedulerFactoryBean.PROP_THREAD_COUNT, threadCount.toString());
+    }
+    return props;
+  }
 
 }

@@ -17,13 +17,13 @@
 package com.onyxscheduler.domain;
 
 import com.google.common.collect.ImmutableSet;
+
 import com.onyxscheduler.OnyxSchedulerApplication;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.quartz.SchedulerException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +32,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -40,401 +46,411 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * Test the proper working of the scheduler component in conjunction with quartz library.
- * Basically test that quartz library is being properly used and expected behavior.
+ * Test the proper working of the scheduler component in conjunction with quartz library. Basically
+ * test that quartz library is being properly used and expected behavior.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @Configuration
 @SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
 public class SchedulerIT {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SchedulerIT.class);
-
-    public static final int FIRE_THRESHOLD_TIMEOUT_IN_MILLIS = 5000;
-    public static final int PAST_DATE_MINUTES = 1;
-    public static final int NON_REACHABLE_FUTURE_MINUTES = 1;
-    public static final int REACHABLE_FUTURE_SECONDS = 3;
-    public static final String JOB_GROUP = "group";
-    public static final String JOB_NAME = "name";
-    public static final String EVERY_2_SECONDS_CRON_EXPRESSION = "0/2 * * * * ?";
-    /* this threshold is required since job might have already updated the countdownlatch of the fakejob but still not
-    ended its execution or updating internal information */
-    private static final long FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS = 500;
+  public static final int FIRE_THRESHOLD_TIMEOUT_IN_MILLIS = 5000;
+  public static final int PAST_DATE_MINUTES = 1;
+  public static final int NON_REACHABLE_FUTURE_MINUTES = 1;
+  public static final int REACHABLE_FUTURE_SECONDS = 3;
+  public static final String JOB_GROUP = "group";
+  public static final String JOB_NAME = "name";
+  public static final String EVERY_2_SECONDS_CRON_EXPRESSION = "0/2 * * * * ?";
+  /* this threshold is required since job might have already updated the countdownlatch of the
+  fakejob but still not ended its execution or updating internal information */
+  private static final long FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS = 500;
 
 
-    @Autowired
-    Scheduler scheduler;
+  @Autowired
+  Scheduler scheduler;
 
-    @Autowired
-    org.quartz.Scheduler quartzScheduler;
+  @Autowired
+  org.quartz.Scheduler quartzScheduler;
 
-    @Autowired
-    LatchProvider latchProvider;
+  @Autowired
+  LatchProvider latchProvider;
 
-    @Bean
-    public LatchProvider latchProvider() {
-        return new LatchProvider();
+  @Bean
+  public LatchProvider latchProvider() {
+    return new LatchProvider();
+  }
+
+  public static class LatchProvider {
+
+    private CountDownLatch latch;
+
+    public void setLatch(CountDownLatch latch) {
+      this.latch = latch;
     }
 
-    public static class LatchProvider {
-
-        private CountDownLatch latch;
-
-        public void setLatch(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        public CountDownLatch getLatch() {
-            return latch;
-        }
+    public CountDownLatch getLatch() {
+      return latch;
     }
+  }
 
-    @Before
-    public void setup() throws SchedulerException {
+  @Before
+  public void setup() throws SchedulerException {
         /* Preferred accessing quartzScheduler here to do cleanup instead of implementing a method in scheduler just
         used for testing */
-        quartzScheduler.clear();
+    quartzScheduler.clear();
+  }
+
+  @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
+  public void shouldFireJobOnceWithPastDate()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    latchProvider.setLatch(latch);
+    CountDownJob existingJob = buildJobWithFixedDateTrigger(buildPastDate());
+    scheduler.scheduleJob(existingJob);
+    latch.await();
+  }
+
+  private Date buildPastDate() {
+    return toDate(LocalDateTime.now().minusMinutes(PAST_DATE_MINUTES));
+  }
+
+  private Date toDate(LocalDateTime localDateTime) {
+    return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+  }
+
+  private CountDownJob buildJobWithFixedDateTrigger(Date fixedDate) {
+    return CountDownJob.buildFromTriggers(ImmutableSet.of(Trigger.fromFixedTime(fixedDate)));
+  }
+
+  public static class CountDownJob extends Job {
+
+    private CountDownLatch latch;
+
+    @Autowired
+    public void setLatchProvider(LatchProvider latchProvider) {
+      this.latch = latchProvider.getLatch();
     }
 
-    @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
-    public void shouldFireJobOnceWithPastDate() throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        latchProvider.setLatch(latch);
-        CountDownJob existingJob = buildJobWithFixedDateTrigger(buildPastDate());
-        scheduler.scheduleJob(existingJob);
-        latch.await();
+    @Override
+    protected Map<String, Object> buildDataMap() {
+      return Collections.emptyMap();
     }
 
-    private Date buildPastDate() {
-        return toDate(LocalDateTime.now().minusMinutes(PAST_DATE_MINUTES));
+    @Override
+    protected void initFromDataMap(Map<String, Object> dataMap) {
     }
 
-    private Date toDate(LocalDateTime localDateTime) {
-        return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+    @Override
+    public void run() {
+      latch.countDown();
     }
 
-    private CountDownJob buildJobWithFixedDateTrigger(Date fixedDate) {
-        return CountDownJob.buildFromTriggers(ImmutableSet.of(Trigger.fromFixedTime(fixedDate)));
+    public static CountDownJob buildFromTriggers(Set<Trigger> triggers) {
+      CountDownJob job = new CountDownJob();
+      job.setGroup(JOB_GROUP);
+      job.setName(JOB_NAME);
+      job.setTriggers(triggers);
+      return job;
     }
 
-    public static class CountDownJob extends Job {
-
-        private static final Logger LOG = LoggerFactory.getLogger(CountDownJob.class);
-
-        private CountDownLatch latch;
-
-        @Autowired
-        public void setLatchProvider(LatchProvider latchProvider) {
-            this.latch = latchProvider.getLatch();
-        }
-
-        @Override
-        protected Map<String, Object> buildDataMap() {
-            return Collections.emptyMap();
-        }
-
-        @Override
-        protected void initFromDataMap(Map<String, Object> dataMap) {
-        }
-
-        @Override
-        public void run() {
-            LOG.debug("Firing!");
-            latch.countDown();
-        }
-
-        static CountDownJob buildFromTriggers(Set<Trigger> triggers) {
-            CountDownJob job = new CountDownJob();
-            job.setGroup(JOB_GROUP);
-            job.setName(JOB_NAME);
-            job.setTriggers(triggers);
-            return job;
-        }
-
-        public static CountDownJob buildFromGroupAndNameAndTriggers(String group, String name,
-                                                                    ImmutableSet<Trigger> triggers) {
-            CountDownJob job = new CountDownJob();
-            job.setGroup(group);
-            job.setName(name);
-            job.setTriggers(triggers);
-            return job;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id, group, name, triggers);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null || getClass() != obj.getClass()) {
-                return false;
-            }
-            final CountDownJob other = (CountDownJob) obj;
-            return Objects.equals(this.id, other.id) && Objects.equals(this.group, other.group)
-                    && Objects.equals(this.name, other.name) && Objects.equals(this.triggers, other.triggers);
-        }
-
-        @Override
-        public String toString() {
-            return com.google.common.base.Objects.toStringHelper(this)
-                    .add("id", id)
-                    .add("group", group)
-                    .add("name", name)
-                    .add("triggers", triggers)
-                    .toString();
-        }
+    public static CountDownJob buildFromGroupAndNameAndTriggers(String group, String name,
+                                                                ImmutableSet<Trigger> triggers) {
+      CountDownJob job = new CountDownJob();
+      job.setGroup(group);
+      job.setName(name);
+      job.setTriggers(triggers);
+      return job;
     }
 
-    @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
-    public void shouldFireJobOnceWithReachableFutureDate() throws Scheduler.DuplicateJobKeyException,
-            InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        latchProvider.setLatch(latch);
-        CountDownJob job = buildJobWithFixedDateTrigger(buildReachableFutureDate());
-
-        scheduler.scheduleJob(job);
-
-        latch.await();
+    @Override
+    public int hashCode() {
+      return Objects.hash(id, group, name, triggers);
     }
 
-    private Date buildReachableFutureDate() {
-        return toDate(LocalDateTime.now().plusSeconds(REACHABLE_FUTURE_SECONDS));
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null || getClass() != obj.getClass()) {
+        return false;
+      }
+      final CountDownJob other = (CountDownJob) obj;
+      return Objects.equals(this.id, other.id) && Objects.equals(this.group, other.group)
+             && Objects.equals(this.name, other.name) && Objects
+          .equals(this.triggers, other.triggers);
     }
 
-    @Test
-    public void shouldNotFireJobWithNonReachableFutureDate() throws InterruptedException,
-            Scheduler.DuplicateJobKeyException {
-        CountDownLatch latch = new CountDownLatch(1);
-        latchProvider.setLatch(latch);
-        CountDownJob job = buildJobWithFixedDateTrigger(buildNonReachableFutureDate());
-
-        scheduler.scheduleJob(job);
-
-        assertThat(latch.await(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS), is(false));
+    @Override
+    public String toString() {
+      return com.google.common.base.Objects.toStringHelper(this)
+          .add("id", id)
+          .add("group", group)
+          .add("name", name)
+          .add("triggers", triggers)
+          .toString();
     }
+  }
 
-    private Date buildNonReachableFutureDate() {
-        return toDate(LocalDateTime.now().plusMinutes(NON_REACHABLE_FUTURE_MINUTES));
-    }
+  @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
+  public void shouldFireJobOnceWithReachableFutureDate() throws Scheduler.DuplicateJobKeyException,
+                                                                InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    latchProvider.setLatch(latch);
+    CountDownJob job = buildJobWithFixedDateTrigger(buildReachableFutureDate());
 
-    @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
-    public void shouldFireMultipleTimesWithCron() throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
-        latchProvider.setLatch(latch);
-        CountDownJob job = buildEvery2SecondsCronJob();
+    scheduler.scheduleJob(job);
 
-        scheduler.scheduleJob(job);
+    latch.await();
+  }
 
-        latch.await();
-    }
+  private Date buildReachableFutureDate() {
+    return toDate(LocalDateTime.now().plusSeconds(REACHABLE_FUTURE_SECONDS));
+  }
 
-    private CountDownJob buildEvery2SecondsCronJob() {
-        return CountDownJob.buildFromTriggers(
-                ImmutableSet.of(Trigger.fromCronExpression(EVERY_2_SECONDS_CRON_EXPRESSION)));
-    }
+  @Test
+  public void shouldNotFireJobWithNonReachableFutureDate() throws InterruptedException,
+                                                                  Scheduler.DuplicateJobKeyException {
+    CountDownLatch latch = new CountDownLatch(1);
+    latchProvider.setLatch(latch);
+    CountDownJob job = buildJobWithFixedDateTrigger(buildNonReachableFutureDate());
 
-    @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
-    public void shouldFireMultipleTimesWithTwoPastTriggers() throws Scheduler.DuplicateJobKeyException,
-            InterruptedException {
-        LOG.debug("<shouldFireMultipleTimesWithTwoPastTriggers>");
-        CountDownLatch latch = new CountDownLatch(2);
-        latchProvider.setLatch(latch);
-        Date pastDate = buildPastDate();
-        CountDownJob job = CountDownJob.buildFromTriggers(
-                ImmutableSet.of(Trigger.fromFixedTime(pastDate),
+    scheduler.scheduleJob(job);
+
+    assertThat(latch.await(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS), is(false));
+  }
+
+  private Date buildNonReachableFutureDate() {
+    return toDate(LocalDateTime.now().plusMinutes(NON_REACHABLE_FUTURE_MINUTES));
+  }
+
+  @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
+  public void shouldFireMultipleTimesWithCron()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+    latchProvider.setLatch(latch);
+    CountDownJob job = buildEvery2SecondsCronJob();
+
+    scheduler.scheduleJob(job);
+
+    latch.await();
+  }
+
+  private CountDownJob buildEvery2SecondsCronJob() {
+    return CountDownJob.buildFromTriggers(
+        ImmutableSet.of(Trigger.fromCronExpression(EVERY_2_SECONDS_CRON_EXPRESSION)));
+  }
+
+  @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
+  public void shouldFireMultipleTimesWithTwoPastTriggers()
+      throws Scheduler.DuplicateJobKeyException,
+             InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+    latchProvider.setLatch(latch);
+    Date pastDate = buildPastDate();
+    CountDownJob job = CountDownJob.buildFromTriggers(
+        ImmutableSet.of(Trigger.fromFixedTime(pastDate),
                         Trigger.fromFixedTime(Date.from(pastDate.toInstant().plusSeconds(1)))));
 
-        scheduler.scheduleJob(job);
+    scheduler.scheduleJob(job);
 
-        latch.await();
-        LOG.debug("</shouldFireMultipleTimesWithTwoPastTriggers>");
-    }
+    latch.await();
+  }
 
-    @Test(expected = Scheduler.DuplicateJobKeyException.class)
-    public void shouldThrowExceptionWhenScheduledWithPendingJobWithSameNameAndGroup() throws Scheduler.DuplicateJobKeyException {
-        CountDownJob existingJob = buildJobWithFixedDateTrigger(buildNonReachableFutureDate());
-        scheduler.scheduleJob(existingJob);
+  @Test(expected = Scheduler.DuplicateJobKeyException.class)
+  public void shouldThrowExceptionWhenScheduledWithPendingJobWithSameNameAndGroup()
+      throws Scheduler.DuplicateJobKeyException {
+    CountDownJob existingJob = buildJobWithFixedDateTrigger(buildNonReachableFutureDate());
+    scheduler.scheduleJob(existingJob);
 
-        scheduler.scheduleJob(buildJobWithFixedDateTrigger(buildPastDate()));
-    }
+    scheduler.scheduleJob(buildJobWithFixedDateTrigger(buildPastDate()));
+  }
 
-    @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
-    public void shouldNotThrowExceptionWhenScheduledWithAlreadyFiredJobWithSameNameAndGroup()
-            throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        waitJobWithPastDate();
-        Thread.sleep(FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS);
+  @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
+  public void shouldNotThrowExceptionWhenScheduledWithAlreadyFiredJobWithSameNameAndGroup()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    waitJobWithPastDate();
+    Thread.sleep(FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS);
 
-        scheduler.scheduleJob(buildJobWithFixedDateTrigger(buildPastDate()));
-    }
+    scheduler.scheduleJob(buildJobWithFixedDateTrigger(buildPastDate()));
+  }
 
-    private void waitJobWithPastDate() throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        latchProvider.setLatch(latch);
-        CountDownJob existingJob = buildJobWithFixedDateTrigger(buildPastDate());
-        scheduler.scheduleJob(existingJob);
-        latch.await();
-    }
+  private void waitJobWithPastDate()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    latchProvider.setLatch(latch);
+    CountDownJob existingJob = buildJobWithFixedDateTrigger(buildPastDate());
+    scheduler.scheduleJob(existingJob);
+    latch.await();
+  }
 
-    @Test
-    public void shouldGetOnlyPendingJobKeysWhenGetJobKeys()
-            throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        int jobId = 0;
-        Set<JobKey> pendingJobsKeys = new HashSet<>();
-        waitJobWithPastDateWithName(getJobNameFromJobId(jobId++));
-        String jobName = getJobNameFromJobId(jobId++);
-        pendingJobsKeys.add(new JobKey(JOB_GROUP, jobName));
-        scheduleNonReachableFutureJobFromName(jobName);
-        waitJobWithPastDateWithName(getJobNameFromJobId(jobId++));
-        jobName = getJobNameFromJobId(jobId);
-        pendingJobsKeys.add(new JobKey(JOB_GROUP, jobName));
-        scheduleNonReachableFutureJobFromName(jobName);
-        Thread.sleep(FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS);
+  @Test
+  public void shouldGetOnlyPendingJobKeysWhenGetJobKeys()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    int jobId = 0;
+    Set<JobKey> pendingJobsKeys = new HashSet<>();
+    waitJobWithPastDateWithName(getJobNameFromJobId(jobId++));
+    String jobName = getJobNameFromJobId(jobId++);
+    pendingJobsKeys.add(new JobKey(JOB_GROUP, jobName));
+    scheduleNonReachableFutureJobFromName(jobName);
+    waitJobWithPastDateWithName(getJobNameFromJobId(jobId++));
+    jobName = getJobNameFromJobId(jobId);
+    pendingJobsKeys.add(new JobKey(JOB_GROUP, jobName));
+    scheduleNonReachableFutureJobFromName(jobName);
+    Thread.sleep(FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS);
 
-        assertThat(scheduler.getJobKeys(), is(pendingJobsKeys));
-    }
+    assertThat(scheduler.getJobKeys(), is(pendingJobsKeys));
+  }
 
-    private void scheduleNonReachableFutureJobFromName(String jobName) throws Scheduler.DuplicateJobKeyException {
-        CountDownJob existingJob = CountDownJob.buildFromGroupAndNameAndTriggers(
-                JOB_GROUP, jobName, ImmutableSet.of(Trigger.fromFixedTime(buildNonReachableFutureDate())));
-        scheduler.scheduleJob(existingJob);
-    }
+  private void scheduleNonReachableFutureJobFromName(String jobName)
+      throws Scheduler.DuplicateJobKeyException {
+    CountDownJob existingJob = CountDownJob.buildFromGroupAndNameAndTriggers(
+        JOB_GROUP, jobName, ImmutableSet.of(Trigger.fromFixedTime(buildNonReachableFutureDate())));
+    scheduler.scheduleJob(existingJob);
+  }
 
-    private void waitJobWithPastDateWithName(String jobName) throws Scheduler.DuplicateJobKeyException,
-            InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        latchProvider.setLatch(latch);
-        CountDownJob existingJob = CountDownJob.buildFromGroupAndNameAndTriggers(
-                JOB_GROUP, jobName, ImmutableSet.of(Trigger.fromFixedTime(buildPastDate())));
-        scheduler.scheduleJob(existingJob);
-        latch.await();
-    }
+  private void waitJobWithPastDateWithName(String jobName)
+      throws Scheduler.DuplicateJobKeyException,
+             InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    latchProvider.setLatch(latch);
+    CountDownJob existingJob = CountDownJob.buildFromGroupAndNameAndTriggers(
+        JOB_GROUP, jobName, ImmutableSet.of(Trigger.fromFixedTime(buildPastDate())));
+    scheduler.scheduleJob(existingJob);
+    latch.await();
+  }
 
-    @Test
-    public void shouldGetEmptyListWhenGetJobKeysWithNoPendingJobs() {
-        assertThat(scheduler.getJobKeys(), is(Collections.emptySet()));
-    }
+  @Test
+  public void shouldGetEmptyListWhenGetJobKeysWithNoPendingJobs() {
+    assertThat(scheduler.getJobKeys(), is(Collections.emptySet()));
+  }
 
-    private String getJobNameFromJobId(int jobId) {
-        return jobId + "";
-    }
+  private String getJobNameFromJobId(int jobId) {
+    return jobId + "";
+  }
 
-    @Test
-    public void shouldGetOnlyPendingJobKeysFromSpecifiedGroupsWhenGetJobKeysByGroup()
-            throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        String group1= "group1", group2="group2";
-        int jobId = 0;
-        Set<JobKey> group2JobsKeys = new HashSet<>();
-        scheduleNonReachableFutureJobFromGroupAndName(group1, getJobNameFromJobId(jobId++));
-        String jobName = getJobNameFromJobId(jobId++);
-        group2JobsKeys.add(new JobKey(group2, jobName));
-        scheduleNonReachableFutureJobFromGroupAndName(group2, jobName);
-        scheduleNonReachableFutureJobFromGroupAndName(group1, getJobNameFromJobId(jobId++));
-        jobName = getJobNameFromJobId(jobId);
-        group2JobsKeys.add(new JobKey(group2, jobName));
-        scheduleNonReachableFutureJobFromGroupAndName(group2, jobName);
+  @Test
+  public void shouldGetOnlyPendingJobKeysFromSpecifiedGroupsWhenGetJobKeysByGroup()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    String group1 = "group1", group2 = "group2";
+    int jobId = 0;
+    Set<JobKey> group2JobsKeys = new HashSet<>();
+    scheduleNonReachableFutureJobFromGroupAndName(group1, getJobNameFromJobId(jobId++));
+    String jobName = getJobNameFromJobId(jobId++);
+    group2JobsKeys.add(new JobKey(group2, jobName));
+    scheduleNonReachableFutureJobFromGroupAndName(group2, jobName);
+    scheduleNonReachableFutureJobFromGroupAndName(group1, getJobNameFromJobId(jobId++));
+    jobName = getJobNameFromJobId(jobId);
+    group2JobsKeys.add(new JobKey(group2, jobName));
+    scheduleNonReachableFutureJobFromGroupAndName(group2, jobName);
 
-        assertThat(scheduler.getJobKeysByGroup(group2), is(group2JobsKeys));
-    }
+    assertThat(scheduler.getJobKeysByGroup(group2), is(group2JobsKeys));
+  }
 
-    private void scheduleNonReachableFutureJobFromGroupAndName(String group, String jobName) throws Scheduler.DuplicateJobKeyException {
-        CountDownJob existingJob = CountDownJob.buildFromGroupAndNameAndTriggers(
-                group, jobName, ImmutableSet.of(Trigger.fromFixedTime(buildNonReachableFutureDate())));
-        scheduler.scheduleJob(existingJob);
-    }
+  private void scheduleNonReachableFutureJobFromGroupAndName(String group, String jobName)
+      throws Scheduler.DuplicateJobKeyException {
+    CountDownJob existingJob = CountDownJob.buildFromGroupAndNameAndTriggers(
+        group, jobName, ImmutableSet.of(Trigger.fromFixedTime(buildNonReachableFutureDate())));
+    scheduler.scheduleJob(existingJob);
+  }
 
-    @Test
-    public void shouldGetEmptyListWhenGetJobKeysByGroupWithNoJobsInTheGroup() throws Scheduler.DuplicateJobKeyException {
-        scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, JOB_NAME);
-        assertThat(scheduler.getJobKeysByGroup("x"), is(Collections.emptySet()));
-    }
+  @Test
+  public void shouldGetEmptyListWhenGetJobKeysByGroupWithNoJobsInTheGroup()
+      throws Scheduler.DuplicateJobKeyException {
+    scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, JOB_NAME);
+    assertThat(scheduler.getJobKeysByGroup("x"), is(Collections.emptySet()));
+  }
 
-    @Test
-    public void shouldRetrievePendingJobInformationWhenGetJobWithPendingJob() throws Scheduler.DuplicateJobKeyException {
-        CountDownJob job = buildJobWithFixedDateTrigger(buildNonReachableFutureDate());
-        scheduler.scheduleJob(job);
-        assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.of(job)));
-    }
+  @Test
+  public void shouldRetrievePendingJobInformationWhenGetJobWithPendingJob()
+      throws Scheduler.DuplicateJobKeyException {
+    CountDownJob job = buildJobWithFixedDateTrigger(buildNonReachableFutureDate());
+    scheduler.scheduleJob(job);
+    assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.of(job)));
+  }
 
-    @Test
-    public void shouldRetrievePendingJobInformationWhenGetJobWithCronJob() throws Scheduler.DuplicateJobKeyException {
-        CountDownJob job = buildEvery2SecondsCronJob();
-        scheduler.scheduleJob(job);
-        assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.of(job)));
-    }
+  @Test
+  public void shouldRetrievePendingJobInformationWhenGetJobWithCronJob()
+      throws Scheduler.DuplicateJobKeyException {
+    CountDownJob job = buildEvery2SecondsCronJob();
+    scheduler.scheduleJob(job);
+    assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.of(job)));
+  }
 
-    @Test
-    public void shouldGetNoJobWhenGetJobWithWithAlreadyFiredJob() throws InterruptedException, Scheduler.DuplicateJobKeyException {
-        waitJobWithPastDate();
-        Thread.sleep(FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS);
-        assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.empty()));
-    }
+  @Test
+  public void shouldGetNoJobWhenGetJobWithWithAlreadyFiredJob()
+      throws InterruptedException, Scheduler.DuplicateJobKeyException {
+    waitJobWithPastDate();
+    Thread.sleep(FIRED_JOB_AWAIT_THRESHOLD_IN_MILLIS);
+    assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.empty()));
+  }
 
-    @Test
-    public void shouldGetNoJobWhenGetJobWithWithUnknownJobKeys() {
-        assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.empty()));
-    }
+  @Test
+  public void shouldGetNoJobWhenGetJobWithWithUnknownJobKeys() {
+    assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.empty()));
+  }
 
-    @Test
-    public void shouldGetNoJobWhenGetJobAfterDeletePendingJob() throws Scheduler.DuplicateJobKeyException {
-        scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, JOB_NAME);
-        scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME));
-        assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.empty()));
-    }
+  @Test
+  public void shouldGetNoJobWhenGetJobAfterDeletePendingJob()
+      throws Scheduler.DuplicateJobKeyException {
+    scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, JOB_NAME);
+    scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME));
+    assertThat(scheduler.getJob(new JobKey(JOB_GROUP, JOB_NAME)), is(Optional.empty()));
+  }
 
-    @Test
-    public void shouldNotIncludeDeletedJobWhenGetJobKeys() throws Scheduler.DuplicateJobKeyException {
-        String job1Name = "job1", job2Name= "job2";
-        scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, job1Name);
-        scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, job2Name);
-        scheduler.deleteJob(new JobKey(JOB_GROUP, job1Name));
-        assertThat(scheduler.getJobKeys(), is(ImmutableSet.of(new JobKey(JOB_GROUP, job2Name))));
-    }
+  @Test
+  public void shouldNotIncludeDeletedJobWhenGetJobKeys() throws Scheduler.DuplicateJobKeyException {
+    String job1Name = "job1", job2Name = "job2";
+    scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, job1Name);
+    scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, job2Name);
+    scheduler.deleteJob(new JobKey(JOB_GROUP, job1Name));
+    assertThat(scheduler.getJobKeys(), is(ImmutableSet.of(new JobKey(JOB_GROUP, job2Name))));
+  }
 
-    @Test
-    public void shouldNotFireDeletedJobWithReachableFutureDate() throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        latchProvider.setLatch(latch);
-        CountDownJob job = buildJobWithFixedDateTrigger(buildReachableFutureDate());
-        scheduler.scheduleJob(job);
-        scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME));
-        assertThat(latch.await(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS), is(false));
-    }
+  @Test
+  public void shouldNotFireDeletedJobWithReachableFutureDate()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    latchProvider.setLatch(latch);
+    CountDownJob job = buildJobWithFixedDateTrigger(buildReachableFutureDate());
+    scheduler.scheduleJob(job);
+    scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME));
+    assertThat(latch.await(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS), is(false));
+  }
 
-    @Test
-    public void shouldStopFiringCronJobAfterDeleted() throws Scheduler.DuplicateJobKeyException, InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
-        latchProvider.setLatch(latch);
-        scheduler.scheduleJob(buildEvery2SecondsCronJob());
-        scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME));
-        assertThat(latch.await(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS), is(false));
-    }
+  @Test
+  public void shouldStopFiringCronJobAfterDeleted()
+      throws Scheduler.DuplicateJobKeyException, InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+    latchProvider.setLatch(latch);
+    scheduler.scheduleJob(buildEvery2SecondsCronJob());
+    scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME));
+    assertThat(latch.await(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS), is(false));
+  }
 
-    @Test
-    public void shouldReturnTrueWhenDeletePendingJob() throws Scheduler.DuplicateJobKeyException {
-        scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, JOB_NAME);
-        assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(true));
-    }
+  @Test
+  public void shouldReturnTrueWhenDeletePendingJob() throws Scheduler.DuplicateJobKeyException {
+    scheduleNonReachableFutureJobFromGroupAndName(JOB_GROUP, JOB_NAME);
+    assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(true));
+  }
 
-    @Test
-    public void shouldReturnTrueWhenDeleteCronJob() throws Scheduler.DuplicateJobKeyException {
-        scheduler.scheduleJob(buildEvery2SecondsCronJob());
-        assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(true));
-    }
+  @Test
+  public void shouldReturnTrueWhenDeleteCronJob() throws Scheduler.DuplicateJobKeyException {
+    scheduler.scheduleJob(buildEvery2SecondsCronJob());
+    assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(true));
+  }
 
-    @Test
-    public void shouldReturnFalseWhenDeleteAlreadyFiredJob() throws InterruptedException, Scheduler.DuplicateJobKeyException {
-        waitJobWithPastDateWithName(JOB_NAME);
-        Thread.sleep(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS);
-        assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(false));
-    }
+  @Test
+  public void shouldReturnFalseWhenDeleteAlreadyFiredJob()
+      throws InterruptedException, Scheduler.DuplicateJobKeyException {
+    waitJobWithPastDateWithName(JOB_NAME);
+    Thread.sleep(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS);
+    assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(false));
+  }
 
-    @Test
-    public void shouldReturnFalseWhenDeleteWithUnknownJobKeys() {
-        assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(false));
-    }
+  @Test
+  public void shouldReturnFalseWhenDeleteWithUnknownJobKeys() {
+    assertThat(scheduler.deleteJob(new JobKey(JOB_GROUP, JOB_NAME)), is(false));
+  }
 
 }

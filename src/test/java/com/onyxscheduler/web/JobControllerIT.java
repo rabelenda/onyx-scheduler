@@ -18,6 +18,7 @@ package com.onyxscheduler.web;
 
 import com.onyxscheduler.OnyxSchedulerApplication;
 import com.onyxscheduler.domain.Scheduler;
+
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;

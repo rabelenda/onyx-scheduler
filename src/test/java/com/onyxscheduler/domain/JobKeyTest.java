@@ -16,25 +16,26 @@
 
 package com.onyxscheduler.domain;
 
+import org.junit.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-import org.junit.Test;
-
 public class JobKeyTest {
+
   private static final String JOB_NAME = "name";
   private static final String JOB_GROUP = "group";
 
   @Test
   public void shouldGetProperQuartzJobKeyWhenBuildQuartzJobKey() {
     assertThat(new JobKey(JOB_GROUP, JOB_NAME).buildQuartzJobKey(),
-      is(new org.quartz.JobKey(JOB_NAME, JOB_GROUP)));
+               is(new org.quartz.JobKey(JOB_NAME, JOB_GROUP)));
   }
 
   @Test
   public void shouldGetProperJobKeyWhenFromQuartzJobKey() {
     assertThat(JobKey.fromQuartzJobKey(new org.quartz.JobKey(JOB_NAME, JOB_GROUP)),
-      is(new JobKey(JOB_GROUP, JOB_NAME)));
+               is(new JobKey(JOB_GROUP, JOB_NAME)));
   }
 
 }

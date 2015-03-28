@@ -22,6 +22,7 @@ import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.TriggerBuilder;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 
@@ -33,10 +34,10 @@ import javax.validation.constraints.AssertTrue;
  */
 public class Trigger {
 
-  private Date when;
+  private Instant when;
   private String cron;
 
-  public static Trigger fromFixedTime(Date when) {
+  public static Trigger fromFixedTime(Instant when) {
     Trigger trigger = new Trigger();
     trigger.setWhen(when);
     return trigger;
@@ -48,11 +49,11 @@ public class Trigger {
     return trigger;
   }
 
-  public Date getWhen() {
+  public Instant getWhen() {
     return when;
   }
 
-  public void setWhen(Date when) {
+  public void setWhen(Instant when) {
     this.when = when;
   }
 
@@ -76,7 +77,7 @@ public class Trigger {
           .withSchedule(CronScheduleBuilder.cronSchedule(cron))
           .build();
     } else {
-      return TriggerBuilder.newTrigger().startAt(when).build();
+      return TriggerBuilder.newTrigger().startAt(Date.from(when)).build();
     }
   }
 
@@ -85,7 +86,7 @@ public class Trigger {
       CronTrigger conTrigger = (CronTrigger) quartzTrigger;
       return fromCronExpression(conTrigger.getCronExpression());
     } else {
-      return fromFixedTime(quartzTrigger.getStartTime());
+      return fromFixedTime(quartzTrigger.getStartTime().toInstant());
     }
   }
 

@@ -30,10 +30,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -110,15 +109,11 @@ public class SchedulerIT {
     latch.await();
   }
 
-  private Date buildPastDate() {
-    return toDate(LocalDateTime.now().minusMinutes(PAST_DATE_MINUTES));
+  private Instant buildPastDate() {
+    return Instant.now().minus(PAST_DATE_MINUTES, ChronoUnit.MINUTES);
   }
 
-  private Date toDate(LocalDateTime localDateTime) {
-    return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
-  }
-
-  private CountDownJob buildJobWithFixedDateTrigger(Date fixedDate) {
+  private CountDownJob buildJobWithFixedDateTrigger(Instant fixedDate) {
     return CountDownJob.buildFromTriggers(ImmutableSet.of(Trigger.fromFixedTime(fixedDate)));
   }
 
@@ -204,8 +199,8 @@ public class SchedulerIT {
     latch.await();
   }
 
-  private Date buildReachableFutureDate() {
-    return toDate(LocalDateTime.now().plusSeconds(REACHABLE_FUTURE_SECONDS));
+  private Instant buildReachableFutureDate() {
+    return Instant.now().plusSeconds(REACHABLE_FUTURE_SECONDS);
   }
 
   @Test
@@ -220,8 +215,8 @@ public class SchedulerIT {
     assertThat(latch.await(FIRE_THRESHOLD_TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS), is(false));
   }
 
-  private Date buildNonReachableFutureDate() {
-    return toDate(LocalDateTime.now().plusMinutes(NON_REACHABLE_FUTURE_MINUTES));
+  private Instant buildNonReachableFutureDate() {
+    return Instant.now().plus(NON_REACHABLE_FUTURE_MINUTES, ChronoUnit.MINUTES);
   }
 
   @Test(timeout = FIRE_THRESHOLD_TIMEOUT_IN_MILLIS)
@@ -247,10 +242,10 @@ public class SchedulerIT {
              InterruptedException {
     CountDownLatch latch = new CountDownLatch(2);
     latchProvider.setLatch(latch);
-    Date pastDate = buildPastDate();
+    Instant pastDate = buildPastDate();
     CountDownJob job = CountDownJob.buildFromTriggers(
         ImmutableSet.of(Trigger.fromFixedTime(pastDate),
-                        Trigger.fromFixedTime(Date.from(pastDate.toInstant().plusSeconds(1)))));
+                        Trigger.fromFixedTime(pastDate.plusSeconds(1))));
 
     scheduler.scheduleJob(job);
 

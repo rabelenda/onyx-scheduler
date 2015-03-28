@@ -16,35 +16,17 @@
 
 package com.onyxscheduler.util;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.onyxscheduler.domain.Trigger;
 
-import org.quartz.CronScheduleBuilder;
-import org.quartz.CronTrigger;
-import org.quartz.TriggerBuilder;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Set;
 
 public class TriggerTestUtils {
 
-  private static final DateFormat DATE_FORMAT = new ISO8601DateFormat();
-
   public static final String CRON = "0/2 * * * * ?";
-  public static final Date FIXED_TIME = parseDate("2030-01-01T00:00:00Z");
-
-  private static Date parseDate(String str) {
-    try {
-      return DATE_FORMAT.parse(str);
-    } catch (ParseException e) {
-      throw Throwables.propagate(e);
-    }
-  }
+  public static final Instant FIXED_TIME = Instant.parse("2030-01-01T00:00:00Z");
 
   private TriggerTestUtils() {
   }
@@ -59,18 +41,6 @@ public class TriggerTestUtils {
 
   public static Trigger buildTriggerWithFixedTime() {
     return Trigger.fromFixedTime(FIXED_TIME);
-  }
-
-  public static Set<org.quartz.Trigger> buildQuartzTriggers() {
-    return ImmutableSet.of(buildFixedTimeQuartzTrigger(), buildCronQuartzTrigger());
-  }
-
-  public static CronTrigger buildCronQuartzTrigger() {
-    return TriggerBuilder.newTrigger().withSchedule(CronScheduleBuilder.cronSchedule(CRON)).build();
-  }
-
-  public static org.quartz.Trigger buildFixedTimeQuartzTrigger() {
-    return TriggerBuilder.newTrigger().startAt(FIXED_TIME).build();
   }
 
 }

@@ -17,7 +17,6 @@
 package com.onyxscheduler.quartz;
 
 import org.quartz.spi.JobFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -40,29 +39,32 @@ public class QuartzConfiguration {
     return new AutowiringSpringBeanJobFactory();
   }
 
+  @Profile("default")
   @Bean
   public SchedulerFactoryBean quartzSchedulerFactory(JobFactory jobFactory,
                                                      Optional<DataSource> dataSource,
-                                                     @Qualifier("quartzProperties") Properties quartzProperties) {
-    SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
-    schedulerFactoryBean.setJobFactory(jobFactory);
-    schedulerFactoryBean.setDataSource(dataSource.orElse(null));
-    schedulerFactoryBean.setQuartzProperties(quartzProperties);
-    return schedulerFactoryBean;
-  }
-
-  @Profile("default")
-  @Bean(name = "quartzProperties")
-  public Properties quartzProperties(QuartzProperties quartzProperties) {
-    return quartzProperties.buildQuartzProperties();
+                                                     QuartzProperties quartzProperties) {
+    return buildSchedulerFactory(jobFactory, dataSource, quartzProperties.buildQuartzProperties());
   }
 
   @Profile("mysql-jobstore")
-  @Bean(name = "quartzProperties")
-  public Properties quartzJobStoreProperties(QuartzProperties quartzProperties) {
+  @Bean
+  public SchedulerFactoryBean quartzSchedulerFactoryWithJobStore(JobFactory jobFactory,
+                                                     Optional<DataSource> dataSource,
+                                                     QuartzProperties quartzProperties) {
     Properties props = quartzProperties.buildQuartzProperties();
     props.putAll(quartzProperties.getJobstore().buildQuartzProperties());
-    return props;
+    return buildSchedulerFactory(jobFactory, dataSource, props);
+  }
+
+  private SchedulerFactoryBean buildSchedulerFactory(JobFactory jobFactory,
+                                                     Optional<DataSource> dataSource,
+                                                     Properties properties) {
+    SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
+    schedulerFactoryBean.setJobFactory(jobFactory);
+    schedulerFactoryBean.setDataSource(dataSource.orElse(null));
+    schedulerFactoryBean.setQuartzProperties(properties);
+    return schedulerFactoryBean;
   }
 
   @Configuration

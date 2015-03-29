@@ -31,8 +31,8 @@ public class PollingVerifier {
     Stopwatch watch = Stopwatch.createStarted();
     do {
       try {
-        lastVerification = null;
         verify.run();
+        return;
       } catch (AssertionError e) {
         lastVerification = e;
         try {
@@ -42,9 +42,7 @@ public class PollingVerifier {
         }
       }
     } while (watch.elapsed(TimeUnit.MILLISECONDS) < VERIFYING_POLL_TIMEOUT_IN_MILLIS);
-    if (lastVerification != null) {
-      throw lastVerification;
-    }
+    throw lastVerification;
   }
 
 }

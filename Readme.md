@@ -36,15 +36,15 @@ If you want to run it with a provided mysql database which already contains quar
 
 A `Dockerfile` is provided so if you want to build it (after running `mvn package`) you can do something like `docker build -t onyx-scheduler .` and then `docker run -p 8080:8080 onyx-scheduler` to run the container. If you use [boot2docker](http://boot2docker.io/) remember to use the docker ip (`boot2docker ip` will display it) instead of localhost from the host machine to access the API.
 
-###Fig
+###docker-compose
 
-[Fig](http://www.fig.sh/) is the perfect companion for Docker: it allows to easily run a set of containers, scale them, etc. A good alternative is [kubernetes](http://kubernetes.io/), but for this kind of scenarios I prefer the simplicity of fig. In this case I just use it for local environment startup and experimentation.
+Docker compose allows to easily run a set of containers, scale them, etc. In just use it for local environment startup and experimentation.
  
-####Fig preconditions
-- [Fig installed](http://www.fig.sh/install.html)
+####Docker-compose preconditions
+- [docker-compose installed](https://docs.docker.com/compose/install/)
 
-A `fig.yml` file is provided which allows to run `fig up` and have scheduler running with no persistent job storage.
-Additionally a `fig-mysql.yml` file is provided which allows through running `fig -f fig-mysql.yml up` to start the scheduler container and a mysql container liking them and using the mysql container for persistent job storage.
+A `docker-compose.yml` file is provided which allows to run `docker-compose up` and have scheduler running with no persistent job storage.
+Additionally a `docker-compose-mysql.yml` file is provided which allows through running `docker-compose -f docker-compose-mysql.yml up` to start the scheduler container and a mysql container linking them and using the mysql container for persistent job storage.
 
 ##API
 The api is almost the same as qzui. Some examples for scheduling jobs:

@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 
 import java.time.Instant;
@@ -36,6 +38,7 @@ public class Trigger {
 
   private Instant when;
   private String cron;
+  private Boolean immediate=false;     //Add Field for immediate trigger
 
   public static Trigger fromFixedTime(Instant when) {
     Trigger trigger = new Trigger();
@@ -48,6 +51,13 @@ public class Trigger {
     trigger.setCron(cron);
     return trigger;
   }
+  
+  public static Trigger fromImmediate(Boolean immediate) {
+	    Trigger trigger = new Trigger();
+	    trigger.setImmediate(immediate);
+	    return trigger;
+  }
+  
 
   public Instant getWhen() {
     return when;
@@ -65,34 +75,67 @@ public class Trigger {
     this.cron = cron;
   }
 
-  @AssertTrue(message = "Either 'cron' or 'when' should be specified")
+  public Boolean getImmediate() {
+	return immediate;
+  }
+	
+  public void setImmediate(Boolean immediate) {
+	this.immediate = immediate;
+  }
+
+@AssertTrue(message = "Either 'cron' or 'when' should be specified")
   @JsonIgnore
   public boolean isValid() {
     return cron != null ^ when != null;
   }
 
   public org.quartz.Trigger buildQuartzTrigger() {
-    if (cron != null) {
-      return TriggerBuilder.newTrigger()
-          .withSchedule(CronScheduleBuilder.cronSchedule(cron))
-          .build();
-    } else {
-      return TriggerBuilder.newTrigger().startAt(Date.from(when)).build();
-    }
+	
+	//Add Immediate Condition for immediate trigger  
+	if(immediate)
+	{
+		return TriggerBuilder.newTrigger().withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0)).startNow().build();
+	}
+	
+	else
+	{
+		 if (cron != null)
+		 {
+			
+			 return TriggerBuilder.newTrigger().withSchedule(CronScheduleBuilder.cronSchedule(cron)).build();
+		     
+		 }
+		 
+		 else
+		 {
+			 
+		     return TriggerBuilder.newTrigger().startAt(Date.from(when)).build();
+		    	
+		 }
+		 
+	}
   }
 
   public static Trigger fromQuartzTrigger(org.quartz.Trigger quartzTrigger) {
     if (quartzTrigger instanceof CronTrigger) {
       CronTrigger conTrigger = (CronTrigger) quartzTrigger;
       return fromCronExpression(conTrigger.getCronExpression());
-    } else {
+    } 
+    else if(quartzTrigger instanceof SimpleTrigger) {
+    	
+    	SimpleTrigger simpleTrigger = (SimpleTrigger)quartzTrigger;
+    	return fromImmediate(simpleTrigger.getRepeatCount() == 0);
+    	
+    }
+    else
+    {
       return fromFixedTime(quartzTrigger.getStartTime().toInstant());
     }
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(when, cron);
+    return Objects.hash(when, cron, immediate);
   }
 
   @Override
@@ -104,7 +147,7 @@ public class Trigger {
       return false;
     }
     final Trigger other = (Trigger) obj;
-    return Objects.equals(this.when, other.when) && Objects.equals(this.cron, other.cron);
+    return Objects.equals(this.when, other.when) && Objects.equals(this.cron, other.cron) && Objects.equals(this.immediate, other.immediate);
   }
 
   @Override
@@ -112,6 +155,7 @@ public class Trigger {
     return com.google.common.base.Objects.toStringHelper(this)
         .add("when", when)
         .add("cron", cron)
+        .add("immediate", immediate)
         .toString();
   }
 

@@ -1,3 +1,21 @@
-# Created by .ignore support plugin (hsz.mobi)
-target
+build.properties
+target/
+.classpath
+.project
+.settings
+*.swp
+*~
+test-output
 .idea
+*.iml
+.metadata
+*.ipr
+site/data/
+.svn
+site/solrhome
+combined/data/
+combined/solrhome
+*.error
+*.log
+local-dev
+**/.vagrant

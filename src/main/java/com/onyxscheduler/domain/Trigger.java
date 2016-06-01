@@ -23,6 +23,7 @@ import org.quartz.CronTrigger;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
+import org.quartz.impl.triggers.SimpleTriggerImpl;
 
 import java.time.Instant;
 import java.util.Date;
@@ -38,7 +39,7 @@ public class Trigger {
 
   private Instant when;
   private String cron;
-  private Boolean immediate=false;     //Add Field for immediate trigger
+  private Boolean immediate;     //Add Field for immediate trigger
 
   public static Trigger fromFixedTime(Instant when) {
     Trigger trigger = new Trigger();
@@ -92,7 +93,7 @@ public class Trigger {
   public org.quartz.Trigger buildQuartzTrigger() {
 	
 	//Add Immediate Condition for immediate trigger  
-	if(immediate)
+	if(immediate != null && immediate)
 	{
 		return TriggerBuilder.newTrigger().withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0)).startNow().build();
 	}
@@ -121,15 +122,18 @@ public class Trigger {
       CronTrigger conTrigger = (CronTrigger) quartzTrigger;
       return fromCronExpression(conTrigger.getCronExpression());
     } 
-    else if(quartzTrigger instanceof SimpleTrigger) {
+    else if(quartzTrigger instanceof SimpleTrigger  && quartzTrigger.getNextFireTime() == null) {
     	
     	SimpleTrigger simpleTrigger = (SimpleTrigger)quartzTrigger;
+ 
     	return fromImmediate(simpleTrigger.getRepeatCount() == 0);
     	
     }
     else
     {
+    	
       return fromFixedTime(quartzTrigger.getStartTime().toInstant());
+      
     }
   }
 

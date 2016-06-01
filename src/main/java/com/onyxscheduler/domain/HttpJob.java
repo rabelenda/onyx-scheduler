@@ -18,7 +18,6 @@ package com.onyxscheduler.domain;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +35,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 
@@ -59,6 +59,10 @@ public class HttpJob extends Job {
   private HttpMethod method = HttpMethod.POST;
   private String body;
   private Map<String, String> headers = Collections.emptyMap();
+  
+  private URL auditUrl;
+  private Map<String, String> auditHeaders = Collections.emptyMap();
+  private int maxTrial = 1;
 
   @SuppressWarnings("SpringJavaAutowiredMembersInspection")
   @Autowired
@@ -101,6 +105,30 @@ public class HttpJob extends Job {
   public void setHeaders(Map<String, String> headers) {
     this.headers = headers;
   }
+  
+  	public URL getAuditUrl() {
+		return auditUrl;
+	}
+	
+	public void setAuditUrl(URL auditUrl) {
+		this.auditUrl = auditUrl;
+	}
+	
+	public Map<String, String> getAuditHeaders() {
+		return auditHeaders;
+	}
+	
+	public void setAuditHeaders(Map<String, String> auditHeaders) {
+		this.auditHeaders = auditHeaders;
+	}
+	
+	public int getMaxTrial() {
+		return maxTrial;
+	}
+	
+	public void setMaxTrial(int maxTrial) {
+		this.maxTrial = maxTrial;
+	}
 
   //this method is used by spring to automatically populate it when building the job from jobDetail
   @SuppressWarnings("unchecked")
@@ -149,15 +177,52 @@ public class HttpJob extends Job {
 
   @Override
   public void run() {
-    HttpHeaders httpHeaders = new HttpHeaders();
-    headers.forEach(httpHeaders::add);
-    HttpEntity<String> request = new HttpEntity<>(body, httpHeaders);
-    ResponseEntity<String> response =
-        restTemplate.exchange(url.toString(), method, request, String.class);
-    int code = response.getStatusCode().value();
-    String responseBody = response.getBody();
-    LOG.info("{}", new HttpAuditRecord(this, code, responseBody));
+	  try {
+		  makeRequest(1);
+	  } catch (Throwable e) {
+		  LOG.error("Failed to trigger the job, retrying", e);
+	  }
+	  
   }
+  
+	private void makeRequest(int trialCount) {
+
+		if (!(trialCount >= maxTrial)) {
+			return;
+		}
+		
+		Date startTime = new Date();
+
+		HttpHeaders httpHeaders = new HttpHeaders();
+		headers.forEach(httpHeaders::add);
+		HttpEntity<String> request = new HttpEntity<>(body, httpHeaders);
+
+		ResponseEntity<String> response = null;
+
+		try {
+			response = restTemplate.exchange(url.toString(), method, request, String.class);
+		} catch (Exception e) {
+			LOG.error("Failed to trigger rest endpoint for trial#: " + trialCount, e);
+			makeRequest(++trialCount);
+		}
+
+		int code = response.getStatusCode().value();
+		String responseBody = response.getBody();
+
+		HttpAuditRecord httpAuditRecord = new HttpAuditRecord(this, code, responseBody, startTime, new Date(), trialCount);
+
+		LOG.info("{}", httpAuditRecord);
+
+		HttpHeaders httpAuditHeaders = new HttpHeaders();
+		auditHeaders.forEach(httpAuditHeaders::add);
+		HttpEntity<HttpAuditRecord> auditRequest = new HttpEntity<>(httpAuditRecord, httpHeaders);
+
+		try {
+			restTemplate.postForObject(auditUrl.toString(), auditRequest, String.class);
+		} catch (Exception e) {
+			LOG.error("Error Logging Audit Record to Log Server Endpoint", e);
+		}
+	}
 
   @Override
   public int hashCode() {
@@ -192,30 +257,4 @@ public class HttpJob extends Job {
         .add("headers", headers)
         .toString();
   }
-
-  private static class HttpAuditRecord {
-
-    private final HttpJob request;
-    private final int responseCode;
-    private final String responseBody;
-
-    private HttpAuditRecord(
-        HttpJob request,
-        int responseCode,
-        String responseBody) {
-      this.request = request;
-      this.responseCode = responseCode;
-      this.responseBody = responseBody;
-    }
-
-    @Override
-    public String toString() {
-      return com.google.common.base.Objects.toStringHelper(this)
-          .add("request", request)
-          .add("responseCode", responseCode)
-          .add("responseBody", responseBody)
-          .toString();
-    }
-  }
-
 }

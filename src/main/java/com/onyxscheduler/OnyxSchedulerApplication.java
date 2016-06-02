@@ -23,12 +23,17 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
@@ -58,5 +63,14 @@ public class OnyxSchedulerApplication {
   public RestTemplate restTemplate() {
     return new RestTemplate();
   }
-
+  	@Configuration
+	@Order(ManagementServerProperties.ACCESS_OVERRIDE_ORDER)
+	static class APISecurity extends WebSecurityConfigurerAdapter
+	{
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			
+			http.authorizeRequests().antMatchers(HttpMethod.OPTIONS,"/*").permitAll().and().csrf().disable();
+		}
+	}
 }

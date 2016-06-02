@@ -1,0 +1,51 @@
+@charset "UTF-8";
+
+/* Job Page */
+.table-bordered>thead>tr>th,
+.table-bordered>tbody>tr>td { vertical-align: middle; }
+table#jobList>tbody>tr { cursor: pointer; }
+table#jobList>thead>tr>th.slNo,
+table#jobList>tbody>tr>td.slNo,
+table#jobList>thead>tr>th.deleteRow,
+table#jobList>tbody>tr>td.deleteRow,
+table#headersTable>thead>tr>th.lastChild,
+table#headersTable>tbody>tr>td.lastChild,
+table#auditTable>thead>tr>th.lastChild,
+table#auditTable>tbody>tr>td.lastChild { width: 20px !important; }
+table#jobList>tbody>tr>td.deleteRow>a,
+table#headersTable>thead>tr>th.lastChild>a,
+table#headersTable>tbody>tr>td.lastChild>a,
+table#auditTable>thead>tr>th.lastChild>a,
+table#auditTable>tbody>tr>td.lastChild>a {
+	display: block;
+	cursor: pointer;
+}
+#addJob .form-control.error { border-color: red; }
+#addJob label.error {
+	width: auto;
+	display: inline;
+	color: red;
+	font-weight: normal;
+}
+#jobDetails {
+	min-height: 40px;
+	position: relative;
+}
+#jobDetails .form-group label { width: 40%; }
+#jobDetails .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 50;
+}
+#jobDetails .overlay .fa {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-left: -15px;
+  margin-top: -15px;
+  color: #000;
+  font-size: 30px;
+}

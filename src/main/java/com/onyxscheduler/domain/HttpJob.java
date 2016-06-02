@@ -179,21 +179,47 @@ public class HttpJob extends Job {
   protected Map<String, Object> buildDataMap() {
     ImmutableMap.Builder<String, Object> builder = ImmutableMap.<String, Object>builder()
         .put(URL_DATAMAP_KEY, url.toString())
-        .put(METHOD_DATAMAP_KEY, method.toString())
-        .put(AUDIT_URL, auditUrl.toString())
-        .put(MAX_TRIAL, maxTrial.toString());
+        .put(METHOD_DATAMAP_KEY, method.toString());
     
     if (body != null) {
-      builder.put(BODY_DATAMAP_KEY, body);
+      
+    	builder.put(BODY_DATAMAP_KEY, body);
+      
     }
     if(nextJobId != null)
     {
+    	
     	builder.put(NEXT_JOB_ID, nextJobId);
+    	
+    }
+    if(auditUrl != null)
+    {
+    	
+    	builder.put(AUDIT_URL, auditUrl.toString());
+    }
+    
+    if(auditHeaders != null)
+    {
+    	
+    	try {
+			builder.put(AUDIT_HEADERS, jsonMapper.writeValueAsString(auditHeaders));
+		} catch (JsonProcessingException e) {
+			
+			throw Throwables.propagate(e);
+		}
+    	
+    }
+    if(maxTrial != null)
+    {
+    	
+    	builder.put(MAX_TRIAL, maxTrial.toString());
+    	
     }
     
     try {
+    	
       builder.put(HEADERS_JSON_DATAMAP_KEY, jsonMapper.writeValueAsString(headers));
-      builder.put(AUDIT_HEADERS, jsonMapper.writeValueAsString(auditHeaders));
+      
     } catch (JsonProcessingException e) {
       //This exception should never happen so just propagating it for the unexpected problem
       throw Throwables.propagate(e);
@@ -203,9 +229,18 @@ public class HttpJob extends Job {
 
   @Override
   protected void initFromDataMap(Map<String, Object> dataMap) {
-    try {
-      url = new URL((String) dataMap.get(URL_DATAMAP_KEY));
-      auditUrl = new URL((String) dataMap.get(AUDIT_URL));
+    try 
+    {
+    	
+	      url = new URL((String) dataMap.get(URL_DATAMAP_KEY));
+	      
+	      if(dataMap.containsKey(AUDIT_URL))
+	      
+	      {
+	    	  auditUrl = new URL((String) dataMap.get(AUDIT_URL));
+	    	  
+	      }
+      
     } catch (MalformedURLException e) {
       throw Throwables.propagate(e);
     }
@@ -214,7 +249,7 @@ public class HttpJob extends Job {
     setHeadersJson((String) dataMap.get(HEADERS_JSON_DATAMAP_KEY));
     setAuditHeadersJson((String) dataMap.get(AUDIT_HEADERS));
     nextJobId = (String) dataMap.get(NEXT_JOB_ID);
-    maxTrial= (Integer) dataMap.get(MAX_TRIAL);
+    maxTrial= (Integer.valueOf(dataMap.get(MAX_TRIAL).toString()));
   }
 
   @Override

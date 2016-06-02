@@ -1,12 +1,25 @@
 @charset "UTF-8";
 
 /* Job Page */
-.table-bordered>tbody>tr { cursor: pointer; }
-.table-bordered>thead>tr>th.slNo,
-.table-bordered>tbody>tr>td.slNo,
-.table-bordered>thead>tr>th.deleteRow,
-.table-bordered>tbody>tr>td.deleteRow { width: 20px !important; }
-.table-bordered>tbody>tr>td.deleteRow>a { display: block; }
+.table-bordered>thead>tr>th,
+.table-bordered>tbody>tr>td { vertical-align: middle; }
+table#jobList>tbody>tr { cursor: pointer; }
+table#jobList>thead>tr>th.slNo,
+table#jobList>tbody>tr>td.slNo,
+table#jobList>thead>tr>th.deleteRow,
+table#jobList>tbody>tr>td.deleteRow,
+table#headersTable>thead>tr>th.lastChild,
+table#headersTable>tbody>tr>td.lastChild,
+table#auditTable>thead>tr>th.lastChild,
+table#auditTable>tbody>tr>td.lastChild { width: 20px !important; }
+table#jobList>tbody>tr>td.deleteRow>a,
+table#headersTable>thead>tr>th.lastChild>a,
+table#headersTable>tbody>tr>td.lastChild>a,
+table#auditTable>thead>tr>th.lastChild>a,
+table#auditTable>tbody>tr>td.lastChild>a {
+	display: block;
+	cursor: pointer;
+}
 #addJob .form-control.error { border-color: red; }
 #addJob label.error {
 	width: auto;

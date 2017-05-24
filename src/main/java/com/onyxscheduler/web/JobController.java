@@ -80,7 +80,7 @@ public class JobController {
 
   @ExceptionHandler(Scheduler.DuplicateJobKeyException.class)
   void handleBadRequests(HttpServletResponse response) throws IOException {
-    response.sendError(HttpStatus.BAD_REQUEST.value());
+    response.sendError(HttpStatus.CONFLICT.value());
   }
 
   @RequestMapping(value = "/jobs", method = RequestMethod.GET)

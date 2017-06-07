@@ -17,7 +17,7 @@ quartz:
 
 quartz:
   jobstore:
-    isClustered: true
+    clustered: true
     instanceId: AUTO
 
 

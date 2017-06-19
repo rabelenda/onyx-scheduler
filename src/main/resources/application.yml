@@ -18,7 +18,7 @@ quartz:
 quartz:
   jobstore:
     clustered: true
-    instanceId: ${HOSTNAME}
+    instanceId: AUTO
 
 
 spring:

@@ -9,6 +9,7 @@ stage('Package') {
         sh 'mv target/onyx-scheduler.jar application.jar'
         sh 'zip -rqdg target/onyx-scheduler.zip application.jar .ebextensions'
         archiveArtifacts artifacts: 'target/onyx-scheduler.zip', fingerprint: true, onlyIfSuccessful: true
+        step([$class: 'WsCleanup'])
     }
 }
 

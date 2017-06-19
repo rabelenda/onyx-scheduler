@@ -6,7 +6,8 @@ stage('Package') {
     node() {
         checkout scm
         sh "${tool 'maven'} package"
-        sh 'zip -rqdg target/onyx-scheduler.zip target/onyx-scheduler.jar .ebextensions'
+        sh 'mv target/onyx-scheduler.jar target/application.jar'
+        sh 'zip -rqdg target/onyx-scheduler.zip target/application.jar .ebextensions'
         archiveArtifacts artifacts: 'target/onyx-scheduler.zip', fingerprint: true, onlyIfSuccessful: true
     }
 }

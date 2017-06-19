@@ -17,7 +17,9 @@ quartz:
 
 quartz:
   jobstore:
-    clustered: false
+    clustered: true
+    instanceId: AUTO
+
 
 spring:
   profiles: mysql-jobstore

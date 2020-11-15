@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -50,7 +50,7 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @Configuration
-@SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
+@SpringBootTest(classes = OnyxSchedulerApplication.class)
 public class SchedulerIT {
 
   public static final int FIRE_THRESHOLD_TIMEOUT_IN_MILLIS = 5000;
@@ -178,7 +178,7 @@ public class SchedulerIT {
 
     @Override
     public String toString() {
-      return com.google.common.base.Objects.toStringHelper(this)
+      return com.google.common.base.MoreObjects.toStringHelper(this)
           .add("id", id)
           .add("group", group)
           .add("name", name)

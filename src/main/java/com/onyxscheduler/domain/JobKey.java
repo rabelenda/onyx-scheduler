@@ -72,7 +72,7 @@ public class JobKey {
 
   @Override
   public String toString() {
-    return com.google.common.base.Objects.toStringHelper(this)
+    return com.google.common.base.MoreObjects.toStringHelper(this)
         .add("name", name)
         .add("group", group)
         .toString();

@@ -63,7 +63,6 @@ public class QuartzProperties {
   public Properties buildQuartzProperties() {
     Properties props = new Properties();
     //skip the check to don't bother with quartz updates
-    props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, Boolean.toString(true));
     props.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_ID,
                       StdSchedulerFactory.AUTO_GENERATE_INSTANCE_ID);
     if (threadCount != null) {

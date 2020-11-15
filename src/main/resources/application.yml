@@ -1,14 +1,9 @@
 info:
   build:
-    artifact: @project.artifactId@
-    name: @project.name@
-    description: @project.description@
-    version: @project.version@
-
-security:
-  user:
-    name: admin
-    password: admin
+    artifact: '@project.artifactId@'
+    name: '@project.name@'
+    description: '@project.description@'
+    version: '@project.version@'
 
 quartz:
   threadCount: 15
@@ -17,11 +12,11 @@ quartz:
 
 quartz:
   jobstore:
-    clustered: false
+    isClustered: {$CLUSTERED:true}
 
 spring:
   profiles: mysql-jobstore
   datasource:
-    url: "jdbc:mysql://mysql/onyx"
-    username: onyx
-    password: onyx
+    url: ${MYSQL_URL:jdbc:mysql://mysql/onyx}
+    username: ${MYSQL_USERNAME:onyx}
+    password: ${MYSQL_PASSWORD:onyx}

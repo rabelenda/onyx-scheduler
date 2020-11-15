@@ -5,6 +5,11 @@ info:
     description: '@project.description@'
     version: '@project.version@'
 
+security:
+  user:
+    name: admin
+    password: admin
+
 quartz:
   threadCount: 15
 

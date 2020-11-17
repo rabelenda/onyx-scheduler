@@ -5,10 +5,8 @@ info:
     description: '@project.description@'
     version: '@project.version@'
 
-security:
-  user:
-    name: admin
-    password: admin
+server:
+  port : ${SERVER_PORT:28080}
 
 quartz:
   threadCount: 15
@@ -25,3 +23,6 @@ spring:
     url: ${MYSQL_URL:jdbc:mysql://mysql/onyx}
     username: ${MYSQL_USERNAME:onyx}
     password: ${MYSQL_PASSWORD:onyx}
+  autoconfigure:
+    exclude[0]: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+    exclude[1]: org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration

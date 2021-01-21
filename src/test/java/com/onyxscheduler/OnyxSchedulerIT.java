@@ -29,9 +29,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.boot.test.TestRestTemplate;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -65,9 +64,8 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
+@SpringBootTest(classes = OnyxSchedulerApplication.class, webEnvironment=SpringBootTest.WebEnvironment.DEFINED_PORT)
 @WebAppConfiguration
-@IntegrationTest({"server.port=0"})
 public class OnyxSchedulerIT {
 
   public static final String PORT_TEMPLATE_PROPERTY_KEY = "port";
@@ -92,7 +90,7 @@ public class OnyxSchedulerIT {
   @Rule
   public WireMockClassRule wireMockRule = wireMockClassRule;
 
-  private RestTemplate restTemplate;
+  private TestRestTemplate restTemplate;
 
   private String appUrl;
 

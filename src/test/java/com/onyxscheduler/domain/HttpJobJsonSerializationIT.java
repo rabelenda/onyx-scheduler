@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Configuration
-@SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
+@SpringBootTest(classes = OnyxSchedulerApplication.class)
 public class HttpJobJsonSerializationIT {
 
   @Autowired

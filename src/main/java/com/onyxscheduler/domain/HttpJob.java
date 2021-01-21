@@ -181,7 +181,7 @@ public class HttpJob extends Job {
 
   @Override
   public String toString() {
-    return com.google.common.base.Objects.toStringHelper(this)
+    return com.google.common.base.MoreObjects.toStringHelper(this)
         .add("id", id)
         .add("group", group)
         .add("name", name)
@@ -210,7 +210,7 @@ public class HttpJob extends Job {
 
     @Override
     public String toString() {
-      return com.google.common.base.Objects.toStringHelper(this)
+      return com.google.common.base.MoreObjects.toStringHelper(this)
           .add("request", request)
           .add("responseCode", responseCode)
           .add("responseBody", responseBody)

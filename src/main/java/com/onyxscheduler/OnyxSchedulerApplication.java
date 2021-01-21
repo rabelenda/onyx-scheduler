@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -50,7 +51,7 @@ public class OnyxSchedulerApplication {
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    mapper.registerModule(new JSR310Module());
+    mapper.registerModule(new JavaTimeModule());
     return new MappingJackson2HttpMessageConverter(mapper);
   }
 

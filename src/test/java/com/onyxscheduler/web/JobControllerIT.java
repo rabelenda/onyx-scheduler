@@ -23,18 +23,16 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.boot.test.TestRestTemplate;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
+@SpringBootTest(classes = OnyxSchedulerApplication.class, webEnvironment=SpringBootTest.WebEnvironment.DEFINED_PORT)
 @WebAppConfiguration
-@IntegrationTest({"server.port=0"})
 public class JobControllerIT {
   //TODO verify proper handling of exceptions, validations, and expected responses (status and body)
 
@@ -47,7 +45,7 @@ public class JobControllerIT {
   @Value("${security.user.password}")
   String password;
 
-  private RestTemplate restTemplate;
+  private TestRestTemplate restTemplate;
 
   private String appUrl;
 

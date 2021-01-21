@@ -34,7 +34,7 @@ If you want to run it with a provided mysql database which already contains quar
 ####Docker preconditions
 - [Docker installed](https://docs.docker.com/installation/)
 
-A `Dockerfile` is provided so if you want to build it (after running `mvn package`) you can do something like `docker build -t onyx-scheduler .` and then `docker run -p 8080:8080 onyx-scheduler` to run the container. If you use [boot2docker](http://boot2docker.io/) remember to use the docker ip (`boot2docker ip` will display it) instead of localhost from the host machine to access the API.
+A `Dockerfile` is provided so if you want to build it (after running `mvn package`) you can do something like `docker build -t onyx-scheduler .` and then `docker run -e SPRING_PROFILES_ACTIVE=mysql-jobstore -e MYSQL_URL="jdbc:mysql://host.docker.internal:3306/onyx" -e MYSQL_USERNAME=onyx -e MYSQL_PASSWORD='onyx' -p 8080:8080 onyx-scheduler` to run the container. If you use [boot2docker](http://boot2docker.io/) remember to use the docker ip (`boot2docker ip` will display it) instead of localhost from the host machine to access the API.
 
 ###docker-compose
 

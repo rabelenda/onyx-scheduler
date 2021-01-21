@@ -26,7 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -49,7 +49,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Configuration
-@SpringApplicationConfiguration(classes = OnyxSchedulerApplication.class)
+@SpringBootTest(classes = OnyxSchedulerApplication.class)
 public class HttpJobExecutionIT {
 
   public static final String TEST_PATH = "/test";
